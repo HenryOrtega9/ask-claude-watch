@@ -17,6 +17,12 @@
 		FD5AF4275BF10109311C5600 /* BridgeConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = 05C79E9CA03DC41F95C932AC /* BridgeConfig.swift */; };
 		1A7C2E90D4B6F1A35E8C0B11 /* SessionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B8D3FA1E5C702B46F9D1C22 /* SessionsView.swift */; };
 		3C9E40B2F6D813C5709E2D33 /* UsageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4DAF51C307E924D6819F3E44 /* UsageView.swift */; };
+		AB01000000000000000000B1 /* AskClaudeWidgets.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB01000000000000000000A1 /* AskClaudeWidgets.swift */; };
+		AB01000000000000000000B2 /* BridgeClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = D981C4BD41E62D9AA245E5BB /* BridgeClient.swift */; };
+		AB01000000000000000000B3 /* BridgeConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = 05C79E9CA03DC41F95C932AC /* BridgeConfig.swift */; };
+		AB01000000000000000000B4 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13729E06124D09E461DE7FAF /* Models.swift */; };
+		AB01000000000000000000B5 /* Secrets.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E350AD0799C1209D84E8D0A /* Secrets.swift */; };
+		AB01000000000000000000B6 /* AskClaudeWidgets.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = AB01000000000000000000A3 /* AskClaudeWidgets.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -32,6 +38,9 @@
 		F948A51BF1232C3C27DD21F9 /* AskClaudeApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AskClaudeApp.swift; sourceTree = "<group>"; };
 		2B8D3FA1E5C702B46F9D1C22 /* SessionsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionsView.swift; sourceTree = "<group>"; };
 		4DAF51C307E924D6819F3E44 /* UsageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UsageView.swift; sourceTree = "<group>"; };
+		AB01000000000000000000A1 /* AskClaudeWidgets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AskClaudeWidgets.swift; sourceTree = "<group>"; };
+		AB01000000000000000000A2 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		AB01000000000000000000A3 /* AskClaudeWidgets.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = AskClaudeWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -57,19 +66,54 @@
 			isa = PBXGroup;
 			children = (
 				650007A800AD3405DB7505B3 /* Sources */,
+				AB01000000000000000000C1 /* Widgets */,
 				B63F3BC33F224D56E7BE4B08 /* Products */,
 			);
+			sourceTree = "<group>";
+		};
+		AB01000000000000000000C1 /* Widgets */ = {
+			isa = PBXGroup;
+			children = (
+				AB01000000000000000000A1 /* AskClaudeWidgets.swift */,
+				AB01000000000000000000A2 /* Info.plist */,
+			);
+			path = Widgets;
 			sourceTree = "<group>";
 		};
 		B63F3BC33F224D56E7BE4B08 /* Products */ = {
 			isa = PBXGroup;
 			children = (
 				65F7DE717025FE6920D5B610 /* AskClaude.app */,
+				AB01000000000000000000A3 /* AskClaudeWidgets.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
+
+/* Begin PBXContainerItemProxy section */
+		AB01000000000000000000E2 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = C995BB7CBCFD51BC53ACE582 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = AB01000000000000000000E1;
+			remoteInfo = AskClaudeWidgets;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		AB01000000000000000000D2 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				AB01000000000000000000B6 /* AskClaudeWidgets.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXNativeTarget section */
 		53B3BD97D89DC2EC78C7B16C /* AskClaude */ = {
@@ -77,10 +121,12 @@
 			buildConfigurationList = 142C419A3B52961B7B569E52 /* Build configuration list for PBXNativeTarget "AskClaude" */;
 			buildPhases = (
 				ADE44BA9017013057AAA6F05 /* Sources */,
+				AB01000000000000000000D2 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				AB01000000000000000000E3 /* PBXTargetDependency */,
 			);
 			name = AskClaude;
 			packageProductDependencies = (
@@ -89,7 +135,30 @@
 			productReference = 65F7DE717025FE6920D5B610 /* AskClaude.app */;
 			productType = "com.apple.product-type.application";
 		};
+		AB01000000000000000000E1 /* AskClaudeWidgets */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = AB01000000000000000000F1 /* Build configuration list for PBXNativeTarget "AskClaudeWidgets" */;
+			buildPhases = (
+				AB01000000000000000000D1 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = AskClaudeWidgets;
+			productName = AskClaudeWidgets;
+			productReference = AB01000000000000000000A3 /* AskClaudeWidgets.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 /* End PBXNativeTarget section */
+
+/* Begin PBXTargetDependency section */
+		AB01000000000000000000E3 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = AB01000000000000000000E1 /* AskClaudeWidgets */;
+			targetProxy = AB01000000000000000000E2 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin PBXProject section */
 		C995BB7CBCFD51BC53ACE582 /* Project object */ = {
@@ -99,6 +168,9 @@
 				LastUpgradeCheck = 2650;
 				TargetAttributes = {
 					53B3BD97D89DC2EC78C7B16C = {
+						ProvisioningStyle = Automatic;
+					};
+					AB01000000000000000000E1 = {
 						ProvisioningStyle = Automatic;
 					};
 				};
@@ -118,6 +190,7 @@
 			projectRoot = "";
 			targets = (
 				53B3BD97D89DC2EC78C7B16C /* AskClaude */,
+				AB01000000000000000000E1 /* AskClaudeWidgets */,
 			);
 		};
 /* End PBXProject section */
@@ -137,6 +210,18 @@
 				004BE1D40BFE7F5194C97D1A /* SettingsView.swift in Sources */,
 				1A7C2E90D4B6F1A35E8C0B11 /* SessionsView.swift in Sources */,
 				3C9E40B2F6D813C5709E2D33 /* UsageView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AB01000000000000000000D1 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AB01000000000000000000B1 /* AskClaudeWidgets.swift in Sources */,
+				AB01000000000000000000B2 /* BridgeClient.swift in Sources */,
+				AB01000000000000000000B3 /* BridgeConfig.swift in Sources */,
+				AB01000000000000000000B4 /* Models.swift in Sources */,
+				AB01000000000000000000B5 /* Secrets.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -300,9 +385,64 @@
 			};
 			name = Debug;
 		};
+		AB01000000000000000000F2 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = SHMR9277Y3;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Widgets/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = dev.henryortega.askclaude.widgets;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.9;
+				TARGETED_DEVICE_FAMILY = 4;
+			};
+			name = Debug;
+		};
+		AB01000000000000000000F3 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = SHMR9277Y3;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Widgets/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = dev.henryortega.askclaude.widgets;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.9;
+				TARGETED_DEVICE_FAMILY = 4;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		AB01000000000000000000F1 /* Build configuration list for PBXNativeTarget "AskClaudeWidgets" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AB01000000000000000000F2 /* Debug */,
+				AB01000000000000000000F3 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
 		142C419A3B52961B7B569E52 /* Build configuration list for PBXNativeTarget "AskClaude" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (

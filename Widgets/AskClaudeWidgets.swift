@@ -106,11 +106,16 @@ private struct ActivityRings: View {
 
     private static let lineWidth: CGFloat = 5.5
 
+    private static let coral = Color(red: 0.91, green: 0.44, blue: 0.29)
+
     var body: some View {
         ZStack {
-            RingArc(pct: entry.fiveHour, color: Color(red: 0.91, green: 0.44, blue: 0.29), lineWidth: Self.lineWidth)
+            RingArc(pct: entry.fiveHour, color: Self.coral, lineWidth: Self.lineWidth)
             RingArc(pct: entry.sevenDay, color: .mint, lineWidth: Self.lineWidth)
                 .padding(Self.lineWidth + 1.5)
+            Image(systemName: "asterisk")
+                .font(.system(size: 11, weight: .bold))
+                .foregroundStyle(Self.coral)
         }
         .padding(1)
     }

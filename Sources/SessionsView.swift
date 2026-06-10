@@ -23,13 +23,12 @@ struct SessionsView: View {
                     .foregroundStyle(.secondary)
             }
             ForEach(sessions) { session in
-                NavigationLink(value: session) {
+                NavigationLink {
+                    SessionChatView(session: session)
+                } label: {
                     SessionRow(session: session)
                 }
             }
-        }
-        .navigationDestination(for: BridgeSession.self) { session in
-            SessionChatView(session: session)
         }
         .navigationTitle("Sessions")
         .toolbar {

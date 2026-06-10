@@ -1,0 +1,28 @@
+name: AskClaude
+options:
+  bundleIdPrefix: dev.henryortega
+  deploymentTarget:
+    watchOS: "10.0"
+targets:
+  AskClaude:
+    type: application
+    platform: watchOS
+    sources: [Sources]
+    info:
+      path: Sources/Info.plist
+      properties:
+        CFBundleDisplayName: Ask Claude
+        WKApplication: true
+        WKWatchOnly: true
+        # The bridge speaks plain HTTP inside the Tailscale tunnel (already
+        # WireGuard-encrypted end to end); ATS would block it otherwise.
+        NSAppTransportSecurity:
+          NSAllowsArbitraryLoads: true
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: dev.henryortega.askclaude
+        CURRENT_PROJECT_VERSION: 1
+        MARKETING_VERSION: 1.0
+        SWIFT_VERSION: "5.9"
+        TARGETED_DEVICE_FAMILY: 4
+        CODE_SIGN_STYLE: Automatic

@@ -1,0 +1,5 @@
+.DS_Store
+Sources/Secrets.swift
+xcuserdata/
+DerivedData/
+*.xcresult

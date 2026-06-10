@@ -1,0 +1,313 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		004BE1D40BFE7F5194C97D1A /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 085EAF04CA787F43B809BC4F /* SettingsView.swift */; };
+		7D15BD864A7F71555A2C942E /* AskClaudeApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = F948A51BF1232C3C27DD21F9 /* AskClaudeApp.swift */; };
+		D4B81DCF25029FFF359D098E /* ChatStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D804A92C79DBF2BF5BD1C41 /* ChatStore.swift */; };
+		DD44A65DBB1560C378D9C2DA /* Secrets.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E350AD0799C1209D84E8D0A /* Secrets.swift */; };
+		E0F0BD0248BD46634C8949CE /* ChatView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8FA3E566ABC7FCDE94E4CF54 /* ChatView.swift */; };
+		E3E4111BAD6C95CEDCC9F043 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13729E06124D09E461DE7FAF /* Models.swift */; };
+		E8E391D8088842052C65D237 /* BridgeClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = D981C4BD41E62D9AA245E5BB /* BridgeClient.swift */; };
+		FD5AF4275BF10109311C5600 /* BridgeConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = 05C79E9CA03DC41F95C932AC /* BridgeConfig.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		05C79E9CA03DC41F95C932AC /* BridgeConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BridgeConfig.swift; sourceTree = "<group>"; };
+		085EAF04CA787F43B809BC4F /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		13729E06124D09E461DE7FAF /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
+		3FEC1A6AF745B69E700A9988 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		4E350AD0799C1209D84E8D0A /* Secrets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Secrets.swift; sourceTree = "<group>"; };
+		5D804A92C79DBF2BF5BD1C41 /* ChatStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatStore.swift; sourceTree = "<group>"; };
+		65F7DE717025FE6920D5B610 /* AskClaude.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AskClaude.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		8FA3E566ABC7FCDE94E4CF54 /* ChatView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatView.swift; sourceTree = "<group>"; };
+		D981C4BD41E62D9AA245E5BB /* BridgeClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BridgeClient.swift; sourceTree = "<group>"; };
+		F948A51BF1232C3C27DD21F9 /* AskClaudeApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AskClaudeApp.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		650007A800AD3405DB7505B3 /* Sources */ = {
+			isa = PBXGroup;
+			children = (
+				F948A51BF1232C3C27DD21F9 /* AskClaudeApp.swift */,
+				D981C4BD41E62D9AA245E5BB /* BridgeClient.swift */,
+				05C79E9CA03DC41F95C932AC /* BridgeConfig.swift */,
+				5D804A92C79DBF2BF5BD1C41 /* ChatStore.swift */,
+				8FA3E566ABC7FCDE94E4CF54 /* ChatView.swift */,
+				3FEC1A6AF745B69E700A9988 /* Info.plist */,
+				13729E06124D09E461DE7FAF /* Models.swift */,
+				4E350AD0799C1209D84E8D0A /* Secrets.swift */,
+				085EAF04CA787F43B809BC4F /* SettingsView.swift */,
+			);
+			path = Sources;
+			sourceTree = "<group>";
+		};
+		A6EF30BF184FB9919641915A = {
+			isa = PBXGroup;
+			children = (
+				650007A800AD3405DB7505B3 /* Sources */,
+				B63F3BC33F224D56E7BE4B08 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		B63F3BC33F224D56E7BE4B08 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				65F7DE717025FE6920D5B610 /* AskClaude.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		53B3BD97D89DC2EC78C7B16C /* AskClaude */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 142C419A3B52961B7B569E52 /* Build configuration list for PBXNativeTarget "AskClaude" */;
+			buildPhases = (
+				ADE44BA9017013057AAA6F05 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = AskClaude;
+			packageProductDependencies = (
+			);
+			productName = AskClaude;
+			productReference = 65F7DE717025FE6920D5B610 /* AskClaude.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		C995BB7CBCFD51BC53ACE582 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+					53B3BD97D89DC2EC78C7B16C = {
+						ProvisioningStyle = Automatic;
+					};
+				};
+			};
+			buildConfigurationList = EED047EE7C2A940B4864CD0D /* Build configuration list for PBXProject "AskClaude" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = A6EF30BF184FB9919641915A;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = B63F3BC33F224D56E7BE4B08 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				53B3BD97D89DC2EC78C7B16C /* AskClaude */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		ADE44BA9017013057AAA6F05 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				7D15BD864A7F71555A2C942E /* AskClaudeApp.swift in Sources */,
+				E8E391D8088842052C65D237 /* BridgeClient.swift in Sources */,
+				FD5AF4275BF10109311C5600 /* BridgeConfig.swift in Sources */,
+				D4B81DCF25029FFF359D098E /* ChatStore.swift in Sources */,
+				E0F0BD0248BD46634C8949CE /* ChatView.swift in Sources */,
+				E3E4111BAD6C95CEDCC9F043 /* Models.swift in Sources */,
+				DD44A65DBB1560C378D9C2DA /* Secrets.swift in Sources */,
+				004BE1D40BFE7F5194C97D1A /* SettingsView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		06F6B0FB65856E26E6D62B78 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+				WATCHOS_DEPLOYMENT_TARGET = 10.0;
+			};
+			name = Release;
+		};
+		6F6483F5CB0209C546878C3B /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				INFOPLIST_FILE = Sources/Info.plist;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = dev.henryortega.askclaude;
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.9;
+				TARGETED_DEVICE_FAMILY = 4;
+			};
+			name = Debug;
+		};
+		774FBCD78940307BBAE5C99B /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				INFOPLIST_FILE = Sources/Info.plist;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = dev.henryortega.askclaude;
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.9;
+				TARGETED_DEVICE_FAMILY = 4;
+			};
+			name = Release;
+		};
+		AA3DDC547499EE4A6CA128EE /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+				WATCHOS_DEPLOYMENT_TARGET = 10.0;
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		142C419A3B52961B7B569E52 /* Build configuration list for PBXNativeTarget "AskClaude" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				6F6483F5CB0209C546878C3B /* Debug */,
+				774FBCD78940307BBAE5C99B /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		EED047EE7C2A940B4864CD0D /* Build configuration list for PBXProject "AskClaude" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AA3DDC547499EE4A6CA128EE /* Debug */,
+				06F6B0FB65856E26E6D62B78 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = C995BB7CBCFD51BC53ACE582 /* Project object */;
+}

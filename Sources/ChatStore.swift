@@ -27,8 +27,8 @@ final class ChatStore: ObservableObject {
         #endif
     }
 
-    var lastIsPartial: Bool {
-        messages.last?.partial == true
+    var hasPartial: Bool {
+        messages.contains(where: { $0.partial })
     }
 
     func send(_ text: String) {
@@ -46,6 +46,13 @@ final class ChatStore: ObservableObject {
                     role: .assistant,
                     text: reply.isEmpty ? "(empty reply)" : reply,
                     partial: partial
+                ))
+            } catch let urlError as URLError where urlError.code == .timedOut || urlError.code == .networkConnectionLost {
+                messages.append(ChatMessage(role: .error, text: urlError.localizedDescription))
+                messages.append(ChatMessage(
+                    role: .assistant,
+                    text: "(connection dropped; the reply may still be coming)",
+                    partial: true
                 ))
             } catch {
                 messages.append(ChatMessage(role: .error, text: error.localizedDescription))
@@ -81,11 +88,18 @@ final class ChatStore: ObservableObject {
 
     /// Fresh bridge session and a cleared thread.
     func newChat() {
+        guard !isSending else { return }
+        isSending = true
         Task {
-            _ = try? await client.reset()
+            do {
+                _ = try await client.reset()
+                messages.removeAll()
+            } catch {
+                messages.append(ChatMessage(role: .error, text: error.localizedDescription))
+            }
+            isSending = false
+            persist()
         }
-        messages.removeAll()
-        persist()
     }
 
     private func persist() {

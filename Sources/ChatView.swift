@@ -2,6 +2,7 @@ import SwiftUI
 
 struct ChatView: View {
     @EnvironmentObject private var store: ChatStore
+    @Environment(\.scenePhase) private var scenePhase
     @State private var draft = ""
 
     var body: some View {
@@ -27,7 +28,7 @@ struct ChatView: View {
                         }
                         .id("thinking")
                     }
-                    if store.lastIsPartial && !store.isSending {
+                    if store.hasPartial && !store.isSending {
                         Button("Check for full reply") {
                             store.checkAgain()
                         }
@@ -45,6 +46,11 @@ struct ChatView: View {
                 if store.isSending {
                     withAnimation { proxy.scrollTo("thinking", anchor: .bottom) }
                 }
+            }
+        }
+        .onChange(of: scenePhase) {
+            if scenePhase == .active && store.hasPartial && !store.isSending {
+                store.checkAgain()
             }
         }
         .navigationTitle("Ask Claude")

@@ -5,12 +5,12 @@ import Foundation
 /// with partial=true if its reply budget expires while Claude is still
 /// working (fetch /last afterwards for the finished reply).
 struct BridgeClient {
-    private var session: URLSession {
+    private static let session: URLSession = {
         let config = URLSessionConfiguration.default
         config.timeoutIntervalForRequest = 120
         config.timeoutIntervalForResource = 150
         return URLSession(configuration: config)
-    }
+    }()
 
     func chat(_ message: String) async throws -> ChatResponse {
         try await request(path: "/chat", method: "POST", body: ["message": message])
@@ -39,7 +39,7 @@ struct BridgeClient {
             req.setValue("application/json", forHTTPHeaderField: "Content-Type")
             req.httpBody = try JSONEncoder().encode(body)
         }
-        let (data, response) = try await session.data(for: req)
+        let (data, response) = try await Self.session.data(for: req)
         let status = (response as? HTTPURLResponse)?.statusCode ?? 0
         let decoded = (try? JSONDecoder().decode(ChatResponse.self, from: data)) ?? ChatResponse()
         switch status {

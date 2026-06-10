@@ -6,18 +6,14 @@ struct AskClaudeApp: App {
 
     var body: some Scene {
         WindowGroup {
-            TabView {
-                NavigationStack {
+            NavigationStack {
+                TabView {
                     ChatView()
-                }
-                NavigationStack {
                     SessionsView()
-                }
-                NavigationStack {
                     UsageView()
                 }
+                .tabViewStyle(.verticalPage)
             }
-            .tabViewStyle(.verticalPage)
             .environmentObject(store)
         }
     }

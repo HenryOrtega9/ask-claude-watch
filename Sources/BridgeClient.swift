@@ -24,6 +24,12 @@ struct BridgeClient {
         try await request(path: "/reset", method: "POST", body: nil)
     }
 
+    /// Fire-and-forget slash command (/model, /effort). The bridge types it
+    /// into the interactive session without waiting for an assistant turn.
+    func command(_ command: String) async throws -> ChatResponse {
+        try await request(path: "/command", method: "POST", body: ["command": command])
+    }
+
     private func request(path: String, method: String, body: [String: String]?) async throws -> ChatResponse {
         guard let url = BridgeConfig.url(path) else { throw BridgeError.badURL }
         var req = URLRequest(url: url)

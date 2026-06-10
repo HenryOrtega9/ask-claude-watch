@@ -23,6 +23,7 @@
 		AB01000000000000000000B4 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13729E06124D09E461DE7FAF /* Models.swift */; };
 		AB01000000000000000000B5 /* Secrets.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E350AD0799C1209D84E8D0A /* Secrets.swift */; };
 		AB01000000000000000000B6 /* AskClaudeWidgets.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = AB01000000000000000000A3 /* AskClaudeWidgets.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		CD02000000000000000000B1 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = CD02000000000000000000A1 /* Assets.xcassets */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -41,6 +42,7 @@
 		AB01000000000000000000A1 /* AskClaudeWidgets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AskClaudeWidgets.swift; sourceTree = "<group>"; };
 		AB01000000000000000000A2 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		AB01000000000000000000A3 /* AskClaudeWidgets.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = AskClaudeWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		CD02000000000000000000A1 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -48,6 +50,7 @@
 			isa = PBXGroup;
 			children = (
 				F948A51BF1232C3C27DD21F9 /* AskClaudeApp.swift */,
+				CD02000000000000000000A1 /* Assets.xcassets */,
 				D981C4BD41E62D9AA245E5BB /* BridgeClient.swift */,
 				05C79E9CA03DC41F95C932AC /* BridgeConfig.swift */,
 				5D804A92C79DBF2BF5BD1C41 /* ChatStore.swift */,
@@ -121,6 +124,7 @@
 			buildConfigurationList = 142C419A3B52961B7B569E52 /* Build configuration list for PBXNativeTarget "AskClaude" */;
 			buildPhases = (
 				ADE44BA9017013057AAA6F05 /* Sources */,
+				CD02000000000000000000D1 /* Resources */,
 				AB01000000000000000000D2 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
@@ -194,6 +198,17 @@
 			);
 		};
 /* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		CD02000000000000000000D1 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				CD02000000000000000000B1 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		ADE44BA9017013057AAA6F05 /* Sources */ = {

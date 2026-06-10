@@ -81,6 +81,41 @@ private struct UsageRing: View {
     }
 }
 
+private struct RingArc: View {
+    let pct: Double?
+    let color: Color
+    let lineWidth: CGFloat
+
+    var body: some View {
+        let fraction = min(max((pct ?? 0) / 100, 0), 1)
+        ZStack {
+            Circle()
+                .stroke(color.opacity(0.25), lineWidth: lineWidth)
+            Circle()
+                .trim(from: 0, to: fraction)
+                .stroke(color, style: StrokeStyle(lineWidth: lineWidth, lineCap: .round))
+                .rotationEffect(.degrees(-90))
+        }
+    }
+}
+
+/// Activity-style concentric rings: outer = 5-hour, inner = 7-day. Each
+/// sweeps clockwise from 12 o'clock and fills as the limit is consumed.
+private struct ActivityRings: View {
+    let entry: UsageEntry
+
+    private static let lineWidth: CGFloat = 5.5
+
+    var body: some View {
+        ZStack {
+            RingArc(pct: entry.fiveHour, color: Color(red: 0.91, green: 0.44, blue: 0.29), lineWidth: Self.lineWidth)
+            RingArc(pct: entry.sevenDay, color: .mint, lineWidth: Self.lineWidth)
+                .padding(Self.lineWidth + 1.5)
+        }
+        .padding(1)
+    }
+}
+
 private struct UsageBar: View {
     let label: String
     let pct: Double?
@@ -119,8 +154,10 @@ private struct UsageWidgetView: View {
                     UsageBar(label: "5h", pct: entry.fiveHour)
                     UsageBar(label: "7d", pct: entry.sevenDay)
                 }
-            default:
+            case .accessoryCorner:
                 UsageRing(label: bucket.short, pct: pct)
+            default:
+                ActivityRings(entry: entry)
             }
         }
         .containerBackground(for: .widget) { Color.clear }

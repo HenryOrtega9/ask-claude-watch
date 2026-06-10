@@ -30,17 +30,30 @@ struct BridgeClient {
         try await request(path: "/command", method: "POST", body: ["command": command])
     }
 
+    func sessions() async throws -> [BridgeSession] {
+        let response: SessionsResponse = try await getJSON("/sessions")
+        return response.sessions
+    }
+
+    func sessionMessages(id: String, limit: Int = 40) async throws -> SessionMessagesResponse {
+        try await getJSON("/sessions/\(id)/messages?limit=\(limit)")
+    }
+
+    /// Fire-and-forget inject into any attachable session; poll
+    /// sessionMessages for the reply.
+    func sessionSend(id: String, message: String) async throws {
+        let (data, status) = try await raw(
+            path: "/sessions/\(id)/send", method: "POST", body: ["message": message]
+        )
+        guard status == 200 else { throw Self.error(for: status, data: data) }
+    }
+
+    func usage() async throws -> UsageResponse {
+        try await getJSON("/usage")
+    }
+
     private func request(path: String, method: String, body: [String: String]?) async throws -> ChatResponse {
-        guard let url = BridgeConfig.url(path) else { throw BridgeError.badURL }
-        var req = URLRequest(url: url)
-        req.httpMethod = method
-        req.setValue("Bearer \(BridgeConfig.token)", forHTTPHeaderField: "Authorization")
-        if let body {
-            req.setValue("application/json", forHTTPHeaderField: "Content-Type")
-            req.httpBody = try JSONEncoder().encode(body)
-        }
-        let (data, response) = try await Self.session.data(for: req)
-        let status = (response as? HTTPURLResponse)?.statusCode ?? 0
+        let (data, status) = try await raw(path: path, method: method, body: body)
         let decoded = (try? JSONDecoder().decode(ChatResponse.self, from: data)) ?? ChatResponse()
         switch status {
         case 200, 202:
@@ -54,5 +67,30 @@ struct BridgeClient {
         default:
             throw BridgeError.server(decoded.error ?? "Bridge error (HTTP \(status))")
         }
+    }
+
+    private func getJSON<T: Decodable>(_ path: String) async throws -> T {
+        let (data, status) = try await raw(path: path, method: "GET", body: nil)
+        guard status == 200 else { throw Self.error(for: status, data: data) }
+        return try JSONDecoder().decode(T.self, from: data)
+    }
+
+    private func raw(path: String, method: String, body: [String: String]?) async throws -> (Data, Int) {
+        guard let url = BridgeConfig.url(path) else { throw BridgeError.badURL }
+        var req = URLRequest(url: url)
+        req.httpMethod = method
+        req.setValue("Bearer \(BridgeConfig.token)", forHTTPHeaderField: "Authorization")
+        if let body {
+            req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            req.httpBody = try JSONEncoder().encode(body)
+        }
+        let (data, response) = try await Self.session.data(for: req)
+        return (data, (response as? HTTPURLResponse)?.statusCode ?? 0)
+    }
+
+    private static func error(for status: Int, data: Data) -> BridgeError {
+        if status == 401 { return .unauthorized }
+        let message = (try? JSONDecoder().decode(ChatResponse.self, from: data))?.error
+        return .server(message ?? "Bridge error (HTTP \(status))")
     }
 }

@@ -15,6 +15,8 @@
 		E3E4111BAD6C95CEDCC9F043 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13729E06124D09E461DE7FAF /* Models.swift */; };
 		E8E391D8088842052C65D237 /* BridgeClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = D981C4BD41E62D9AA245E5BB /* BridgeClient.swift */; };
 		FD5AF4275BF10109311C5600 /* BridgeConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = 05C79E9CA03DC41F95C932AC /* BridgeConfig.swift */; };
+		1A7C2E90D4B6F1A35E8C0B11 /* SessionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B8D3FA1E5C702B46F9D1C22 /* SessionsView.swift */; };
+		3C9E40B2F6D813C5709E2D33 /* UsageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4DAF51C307E924D6819F3E44 /* UsageView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -28,6 +30,8 @@
 		8FA3E566ABC7FCDE94E4CF54 /* ChatView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatView.swift; sourceTree = "<group>"; };
 		D981C4BD41E62D9AA245E5BB /* BridgeClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BridgeClient.swift; sourceTree = "<group>"; };
 		F948A51BF1232C3C27DD21F9 /* AskClaudeApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AskClaudeApp.swift; sourceTree = "<group>"; };
+		2B8D3FA1E5C702B46F9D1C22 /* SessionsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionsView.swift; sourceTree = "<group>"; };
+		4DAF51C307E924D6819F3E44 /* UsageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UsageView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -43,6 +47,8 @@
 				13729E06124D09E461DE7FAF /* Models.swift */,
 				4E350AD0799C1209D84E8D0A /* Secrets.swift */,
 				085EAF04CA787F43B809BC4F /* SettingsView.swift */,
+				2B8D3FA1E5C702B46F9D1C22 /* SessionsView.swift */,
+				4DAF51C307E924D6819F3E44 /* UsageView.swift */,
 			);
 			path = Sources;
 			sourceTree = "<group>";
@@ -129,6 +135,8 @@
 				E3E4111BAD6C95CEDCC9F043 /* Models.swift in Sources */,
 				DD44A65DBB1560C378D9C2DA /* Secrets.swift in Sources */,
 				004BE1D40BFE7F5194C97D1A /* SettingsView.swift in Sources */,
+				1A7C2E90D4B6F1A35E8C0B11 /* SessionsView.swift in Sources */,
+				3C9E40B2F6D813C5709E2D33 /* UsageView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

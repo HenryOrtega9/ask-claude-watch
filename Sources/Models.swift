@@ -67,6 +67,94 @@ enum EffortLevel: String, CaseIterable, Identifiable {
     }
 }
 
+struct BridgeSession: Decodable, Identifiable, Hashable {
+    var id: String
+    var kind: String
+    var name: String
+    var cwd: String
+    var attach: String?
+    var pid: Int?
+    var last_activity: Int?
+    var preview: String?
+
+    /// Whether the bridge has an input route into this session (its own PTY
+    /// child, or a tmux pane it can send-keys into). Otherwise view-only.
+    var isAttachable: Bool { attach != nil }
+
+    var kindIcon: String {
+        switch kind {
+        case "watch": return "applewatch"
+        case "remote-control": return "antenna.radiowaves.left.and.right"
+        default: return "terminal"
+        }
+    }
+
+    var lastActivityDate: Date? {
+        last_activity.map { Date(timeIntervalSince1970: TimeInterval($0)) }
+    }
+}
+
+struct SessionsResponse: Decodable {
+    var sessions: [BridgeSession]
+}
+
+struct SessionMessage: Decodable, Identifiable, Hashable {
+    var uuid: String?
+    var role: String
+    var text: String
+    var ts: String?
+
+    var id: String { uuid ?? "\(role)|\(ts ?? text)" }
+}
+
+struct SessionMessagesResponse: Decodable {
+    var session: BridgeSession
+    var messages: [SessionMessage]
+}
+
+struct UsageBucket: Decodable {
+    var utilization: Double?
+    var resets_at: String?
+
+    var resetsAtDate: Date? { BridgeDates.parse(resets_at) }
+}
+
+struct UsageResponse: Decodable {
+    var five_hour: UsageBucket?
+    var seven_day: UsageBucket?
+    var seven_day_opus: UsageBucket?
+    var seven_day_sonnet: UsageBucket?
+    var seven_day_omelette: UsageBucket?
+    var extra_usage: ExtraUsage?
+
+    struct ExtraUsage: Decodable {
+        var is_enabled: Bool?
+        var utilization: Double?
+        var used_credits: Double?
+        var monthly_limit: Double?
+        var currency: String?
+    }
+}
+
+enum BridgeDates {
+    /// The bridge relays timestamps in several ISO 8601 flavors (trailing Z,
+    /// +00:00 offsets, microsecond fractions); try the strict parsers first
+    /// and fall back to stripping a nonstandard fraction.
+    static func parse(_ value: String?) -> Date? {
+        guard var s = value, !s.isEmpty else { return nil }
+        let fractional = ISO8601DateFormatter()
+        fractional.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        let plain = ISO8601DateFormatter()
+        plain.formatOptions = [.withInternetDateTime]
+        if let d = fractional.date(from: s) ?? plain.date(from: s) { return d }
+        if let r = s.range(of: #"\.\d+"#, options: .regularExpression) {
+            s.removeSubrange(r)
+            return plain.date(from: s)
+        }
+        return nil
+    }
+}
+
 enum BridgeError: LocalizedError {
     case badURL
     case turnInFlight

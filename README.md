@@ -1,8 +1,17 @@
 # AskClaude
 
-Standalone watchOS SwiftUI app for chatting with Claude Code about the
-Second Brain vault, via the Mac-side watch-bridge daemon
-(`claude-cli-chat/scripts/watch-bridge/`) over Tailscale.
+Standalone watchOS SwiftUI app for chatting with Claude Code from an Apple
+Watch. A thin client over a Mac-side bridge daemon
+([claude-cli-chat](https://github.com/HenryOrtega9/claude-cli-chat)
+`scripts/watch-bridge/`) that holds one interactive `claude` session and
+exposes it over a bearer-authed HTTP API across a Tailscale tailnet.
+
+Features: dictated or typed chat with full conversation context, a model and
+effort picker (driven by `/model` and `/effort` slash commands typed into the
+session), a Sessions tab that can view and message any live Claude session on
+the Mac, plan-limit usage gauges, Activity-style dual-ring watch-face
+complications, and background done-notifications when a turn finishes after
+the wrist drops.
 
 ## Setup
 
@@ -15,12 +24,15 @@ Second Brain vault, via the Mac-side watch-bridge daemon
    }
    ```
 
-2. Generate the Xcode project and build:
+2. Open the Xcode project and build:
 
    ```sh
-   xcodegen generate
    open AskClaude.xcodeproj
    ```
+
+   Do not run `xcodegen generate`: `project.yml` predates the widget target
+   and the app-group entitlements, so regenerating would drop both. The
+   checked-in `.xcodeproj` is the source of truth.
 
 3. In Xcode: Signing & Capabilities → pick your team, select the watch as
    the run destination, ⌘R.

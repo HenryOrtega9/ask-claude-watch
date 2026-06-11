@@ -99,6 +99,9 @@ struct SessionChatView: View {
     @State private var draft = ""
     @State private var sending = false
     @State private var error: String?
+    /// Send failures live separately so the polling loop's load() cannot
+    /// erase them before the user sees them.
+    @State private var sendError: String?
 
     private let client = BridgeClient()
 
@@ -131,6 +134,11 @@ struct SessionChatView: View {
                             .onSubmit { send() }
                             .disabled(sending)
                             .padding(.top, 4)
+                        if let sendError {
+                            Text(sendError)
+                                .font(.system(size: 11))
+                                .foregroundStyle(.red)
+                        }
                     } else {
                         Text("View only")
                             .font(.system(size: 11))
@@ -173,8 +181,9 @@ struct SessionChatView: View {
             do {
                 try await client.sessionSend(id: current.id, message: trimmed)
                 draft = ""
+                sendError = nil
             } catch {
-                self.error = error.localizedDescription
+                sendError = error.localizedDescription
             }
             sending = false
             await load()

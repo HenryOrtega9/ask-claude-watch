@@ -28,3 +28,13 @@ Second Brain vault, via the Mac-side watch-bridge daemon
 Host, port, and token are editable at runtime in the app's Settings screen;
 `Secrets.bridgeToken` and the tailnet host in `BridgeConfig` are only the
 first-launch defaults.
+
+## Done notifications
+
+Closing the app (wrist down) while Claude is still working arms a background
+`URLSession` long-poll against the bridge's `GET /wait` endpoint
+(`TurnNotifier`). When the turn finishes, watchOS wakes the app in the
+background, a local notification with the reply preview fires, and the full
+reply is stashed; tapping the notification (or reopening the app) merges it
+into the chat. Local notifications only; no APNs or paid push setup. Allow
+notifications on first launch when prompted.

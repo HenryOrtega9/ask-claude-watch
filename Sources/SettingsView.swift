@@ -1,9 +1,10 @@
 import SwiftUI
+import WidgetKit
 
 struct SettingsView: View {
-    @AppStorage("bridgeHost") private var host = BridgeConfig.defaultHost
-    @AppStorage("bridgePort") private var port = BridgeConfig.defaultPort
-    @AppStorage("bridgeToken") private var token = BridgeConfig.defaultToken
+    @AppStorage("bridgeHost", store: BridgeConfig.suite) private var host = BridgeConfig.defaultHost
+    @AppStorage("bridgePort", store: BridgeConfig.suite) private var port = BridgeConfig.defaultPort
+    @AppStorage("bridgeToken", store: BridgeConfig.suite) private var token = BridgeConfig.defaultToken
     @AppStorage("modelAlias") private var modelAlias = ClaudeModel.fable.rawValue
     @AppStorage("model1M") private var oneMillion = false
     @AppStorage("effortLevel") private var effortLevel = EffortLevel.auto.rawValue
@@ -59,6 +60,9 @@ struct SettingsView: View {
         .navigationTitle("Settings")
         .onChange(of: modelAlias) { _, _ in clampInvalidChoices() }
         .onChange(of: oneMillion) { _, _ in clampInvalidChoices() }
+        .onChange(of: host) { _, _ in WidgetCenter.shared.reloadAllTimelines() }
+        .onChange(of: port) { _, _ in WidgetCenter.shared.reloadAllTimelines() }
+        .onChange(of: token) { _, _ in WidgetCenter.shared.reloadAllTimelines() }
     }
 
     /// Keep stored choices legal when the model changes underneath them:

@@ -12,6 +12,11 @@ struct UsageView: View {
     var body: some View {
         List {
             if let usage {
+                if let error {
+                    Text(error)
+                        .font(.system(size: 10))
+                        .foregroundStyle(.red)
+                }
                 UsageRow(title: "5 hour", bucket: usage.five_hour)
                 UsageRow(title: "7 day", bucket: usage.seven_day)
                 UsageRow(title: "Sonnet 7d", bucket: usage.seven_day_sonnet)

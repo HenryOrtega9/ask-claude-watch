@@ -20,6 +20,9 @@
 	<string>1.0</string>
 	<key>CFBundleVersion</key>
 	<string>1</string>
+	<!-- The bridge speaks plain HTTP to a raw tailnet IP literal. ATS exception
+	     domains only accept hostnames, so this cannot be scoped narrower; the
+	     transport is already WireGuard-encrypted end to end by Tailscale. -->
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSAllowsArbitraryLoads</key>

@@ -15,11 +15,12 @@ the wrist drops.
 
 ## Setup
 
-1. Create `Sources/Secrets.swift` (gitignored) with the bridge bearer token
-   from `~/.config/watch-bridge/token`:
+1. Create `Sources/Secrets.swift` (gitignored) with the bridge's tailnet host
+   and the bearer token from `~/.config/watch-bridge/token`:
 
    ```swift
    enum Secrets {
+       static let bridgeHost = "<tailscale-ip-of-your-mac>"
        static let bridgeToken = "<token>"
    }
    ```
@@ -38,8 +39,11 @@ the wrist drops.
    the run destination, ⌘R.
 
 Host, port, and token are editable at runtime in the app's Settings screen;
-`Secrets.bridgeToken` and the tailnet host in `BridgeConfig` are only the
-first-launch defaults.
+the values in `Secrets.swift` are only the first-launch defaults.
+
+The app sets `NSAllowsArbitraryLoads` because the bridge speaks plain HTTP to
+a raw IP literal, which ATS exception domains cannot scope to. The transport
+is still encrypted end to end by Tailscale's WireGuard tunnel.
 
 ## Done notifications
 

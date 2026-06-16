@@ -1,8 +1,9 @@
 import SwiftUI
 
-/// Lists every live Claude session on the Mac (the bridge's own watch
-/// session, vault-cc remote-control sessions, plain terminal sessions) and
-/// opens each one as a polled transcript view.
+/// Lists the Mac's activated Remote Control sessions (the bridge returns only
+/// `claude remote-control` sessions; plain terminal sessions and the plugin's
+/// own chat subprocesses are excluded) and opens each as a polled transcript
+/// view.
 struct SessionsView: View {
     @State private var sessions: [BridgeSession] = []
     @State private var error: String?

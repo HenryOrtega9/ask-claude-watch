@@ -12,10 +12,6 @@ final class TurnNotifier: NSObject {
     static let shared = TurnNotifier()
     static let sessionID = "dev.henryortega.askclaude.wait"
     private static let pendingReplyKey = "pendingBackgroundReply"
-    /// Slack subtracted from `since` to absorb watch/Mac clock skew. A stale
-    /// match would need the PREVIOUS turn to have completed within this
-    /// window of the new send, which the UI's single-turn flow rules out.
-    private static let skewSlack: TimeInterval = 2
     /// Longer than the bridge's absolute turn ceiling (REPLY_BUDGET_S * 4),
     /// so one wait always spans the turn's whole lifetime and no re-arm
     /// logic is needed.
@@ -32,7 +28,12 @@ final class TurnNotifier: NSObject {
     /// Arm a background wait for the turn sent at `since`. Replaces any
     /// previously armed wait.
     func arm(since: Date) {
-        let sinceEpoch = Int(since.timeIntervalSince1970 - Self.skewSlack)
+        // Shared with BridgeClient's `wait(since:timeout:)` so the
+        // foreground check-again poll and this background long-poll agree
+        // on the skew. A stale match would need the PREVIOUS turn to have
+        // completed within this window of the new send, which the UI's
+        // single-turn flow rules out.
+        let sinceEpoch = Int(since.timeIntervalSince1970 - BridgeClient.skewSlack)
         guard let url = BridgeConfig.url("/wait?since=\(sinceEpoch)&timeout=\(Self.waitSeconds)") else { return }
         var req = URLRequest(url: url)
         req.setValue("Bearer \(BridgeConfig.token)", forHTTPHeaderField: "Authorization")
@@ -94,6 +95,7 @@ extension TurnNotifier: URLSessionDownloadDelegate {
             let data = try? Data(contentsOf: location),
             let response = try? JSONDecoder().decode(ChatResponse.self, from: data),
             let reply = response.reply,
+            !reply.isEmpty,
             response.partial != true
         else { return }
         UserDefaults.standard.set(reply, forKey: Self.pendingReplyKey)

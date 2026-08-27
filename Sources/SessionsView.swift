@@ -5,6 +5,7 @@ import SwiftUI
 /// own chat subprocesses are excluded) and opens each as a polled transcript
 /// view.
 struct SessionsView: View {
+    @Environment(\.scenePhase) private var scenePhase
     @State private var sessions: [BridgeSession] = []
     @State private var error: String?
     @State private var loading = false
@@ -46,6 +47,9 @@ struct SessionsView: View {
             if loading && sessions.isEmpty { ProgressView() }
         }
         .task { await refresh() }
+        .onChange(of: scenePhase) {
+            if scenePhase == .active { Task { await refresh() } }
+        }
     }
 
     private func refresh() async {
@@ -95,6 +99,7 @@ private struct SessionRow: View {
 struct SessionChatView: View {
     let session: BridgeSession
 
+    @Environment(\.scenePhase) private var scenePhase
     @State private var info: BridgeSession?
     @State private var messages: [SessionMessage] = []
     @State private var draft = ""
@@ -156,21 +161,35 @@ struct SessionChatView: View {
         }
         .navigationTitle(current.name)
         .task {
+            // Only poll while frontmost: SwiftUI does not cancel `.task` on
+            // background/inactive, so without this gate the loop would keep
+            // waking the radio every few seconds with the screen off. Back
+            // off on repeated failures (dead bridge, off the tailnet) so an
+            // unreachable Mac doesn't cost a request every 3s indefinitely.
+            var backoffSeconds = 3.0
             while !Task.isCancelled {
-                await load()
-                try? await Task.sleep(for: .seconds(3))
+                if scenePhase == .active {
+                    let ok = await load()
+                    backoffSeconds = ok ? 3.0 : min(backoffSeconds * 2, 30.0)
+                    try? await Task.sleep(for: .seconds(backoffSeconds))
+                } else {
+                    try? await Task.sleep(for: .seconds(3))
+                }
             }
         }
     }
 
-    private func load() async {
+    @discardableResult
+    private func load() async -> Bool {
         do {
             let response = try await client.sessionMessages(id: current.id)
             info = response.session
             messages = response.messages
             error = nil
+            return true
         } catch {
             self.error = error.localizedDescription
+            return false
         }
     }
 

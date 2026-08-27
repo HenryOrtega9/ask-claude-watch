@@ -40,6 +40,13 @@ final class ChatStore: ObservableObject {
     func send(_ text: String) {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty, !isSending else { return }
+        // A leftover partial bubble from an earlier, still-unresolved turn
+        // must never be mistaken for this turn's reply by checkAgain or
+        // appDidActivate — demote it before this turn's own partial (if any)
+        // can appear.
+        if let staleIndex = messages.lastIndex(where: { $0.partial }) {
+            messages[staleIndex].partial = false
+        }
         messages.append(ChatMessage(role: .user, text: trimmed))
         isSending = true
         turnSentAt = Date()
@@ -93,20 +100,28 @@ final class ChatStore: ObservableObject {
         }
     }
 
-    /// After a partial (202) reply: fetch the completed answer from /last and
-    /// replace the partial bubble when the bridge has finished the turn.
+    /// After a partial (202) reply: long-poll /wait for the turn this partial
+    /// bubble belongs to (never /last, whose single unscoped slot holds
+    /// whichever turn finished most recently and could be a stale answer to
+    /// an earlier question). A 202 timeout means Claude is still working, so
+    /// the partial bubble is left untouched.
     func checkAgain() {
         guard !isSending else { return }
         isSending = true
+        let since = turnSentAt
+            ?? messages.last(where: { $0.partial })?.date
+            ?? Date().addingTimeInterval(-60)
         Task {
             do {
-                let response = try await client.last()
+                let response = try await client.wait(since: since, timeout: 20)
                 if let reply = response.reply, response.partial != true {
+                    // Merge into the partial bubble this turn owns. If it is
+                    // already gone (e.g. appDidActivate resolved it first),
+                    // there is nothing to append — doing so would duplicate
+                    // a reply already shown.
                     if let index = messages.lastIndex(where: { $0.partial }) {
-                        messages[index].text = reply
+                        messages[index].text = reply.isEmpty ? "(empty reply)" : reply
                         messages[index].partial = false
-                    } else {
-                        messages.append(ChatMessage(role: .assistant, text: reply))
                     }
                     turnSentAt = nil
                     TurnNotifier.clearPendingReply()
@@ -123,8 +138,12 @@ final class ChatStore: ObservableObject {
     /// a local notification fires when Claude finishes, wrist down or not.
     func appDidBackground() {
         guard isSending || hasPartial else { return }
+        // Never fall back to the newest user message's date: with multiple
+        // turns in history that message may belong to an already-completed
+        // turn, not the one this partial bubble is still waiting on. The
+        // partial bubble's own timestamp is scoped to its turn regardless.
         let since = turnSentAt
-            ?? messages.last(where: { $0.role == .user })?.date
+            ?? messages.last(where: { $0.partial })?.date
             ?? Date().addingTimeInterval(-60)
         TurnNotifier.shared.arm(since: since)
     }
@@ -135,15 +154,21 @@ final class ChatStore: ObservableObject {
         TurnNotifier.shared.cancelAll()
         UNUserNotificationCenter.current().removeAllDeliveredNotifications()
         guard let reply = TurnNotifier.peekPendingReply() else { return }
-        if let index = messages.lastIndex(where: { $0.partial }) {
+        if isSending {
+            // /chat is still resuming; its error path consumes the pending
+            // reply when the dropped connection surfaces. Checking this
+            // first (before touching `messages`) keeps that path the sole
+            // owner of the merge for the in-flight turn.
+            return
+        }
+        // Scope the partial lookup to this turn: a bubble from an earlier,
+        // already-superseded turn must never be targeted.
+        let turnStart = messages.lastIndex(where: { $0.role == .user }) ?? messages.startIndex
+        if let index = messages[turnStart...].lastIndex(where: { $0.partial }) {
             messages[index].text = reply
             messages[index].partial = false
-        } else if !isSending {
+        } else {
             messages.append(ChatMessage(role: .assistant, text: reply))
-        } else if isSending {
-            // /chat is still resuming; its error path consumes the pending
-            // reply when the dropped connection surfaces.
-            return
         }
         TurnNotifier.clearPendingReply()
         turnSentAt = nil
@@ -170,9 +195,23 @@ final class ChatStore: ObservableObject {
     }
 
     private func persist() {
-        let tail = Array(messages.suffix(Self.maxPersisted))
-        if let data = try? JSONEncoder().encode(tail) {
-            UserDefaults.standard.set(data, forKey: Self.persistKey)
+        // Cap in-memory history too: a relaunch already only ever restores
+        // the last maxPersisted messages, so trimming here just keeps a
+        // long-running session's memory and diffing cost from growing
+        // without bound instead of only capping what gets saved to disk.
+        if messages.count > Self.maxPersisted {
+            messages.removeFirst(messages.count - Self.maxPersisted)
+        }
+        // Encode off the main actor: this runs on every send and every
+        // reply, and re-encoding up to maxPersisted full message bodies
+        // synchronously here would otherwise compete with the UI. Capture
+        // the key as a local (rather than the actor-isolated static) so the
+        // detached task never touches actor-isolated state.
+        let snapshot = messages
+        let key = Self.persistKey
+        Task.detached(priority: .utility) {
+            guard let data = try? JSONEncoder().encode(snapshot) else { return }
+            UserDefaults.standard.set(data, forKey: key)
         }
     }
 

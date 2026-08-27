@@ -84,7 +84,11 @@ struct SettingsView: View {
             do {
                 let client = BridgeClient()
                 _ = try await client.command(modelCommand)
-                try await Task.sleep(for: .seconds(1))
+                // The bridge debounces its switch-confirmation auto-accept
+                // over a 3s window per dialog instance; a shorter gap lands
+                // /effort's own confirmation inside that window, where it
+                // gets silently swallowed and /effort never applies.
+                try await Task.sleep(for: .seconds(3.5))
                 _ = try await client.command(effortCommand)
                 modelStatus = "Now on \(model.label)\(oneMillion && model.supports1M ? " 1M" : ""), \(effort.label) effort."
             } catch {

@@ -5,6 +5,21 @@ import Foundation
 /// with partial=true if its reply budget expires while Claude is still
 /// working (fetch /last afterwards for the finished reply).
 struct BridgeClient {
+    /// The full /chat turn budget, and /wait's bounded server-side block.
+    /// Fast bridge-local reads/writes (usage, sessions, /last, /reset,
+    /// /command) must never inherit this — a widget extension only gets a
+    /// few seconds before WidgetKit terminates it, and an unreachable bridge
+    /// drops packets rather than refusing them, so a shared long timeout
+    /// hangs those calls for the full window.
+    private enum RequestBudget { case blocking, quick }
+
+    /// Slack subtracted from a `since` timestamp to absorb watch/Mac clock
+    /// skew. Shared with TurnNotifier's background long-poll (which cannot
+    /// import this struct's app-only counterpart, since it does not compile
+    /// into the widget extension target that also links BridgeClient) so
+    /// both the foreground check-again poll and the background wait agree.
+    static let skewSlack: TimeInterval = 2
+
     private static let session: URLSession = {
         let config = URLSessionConfiguration.default
         config.timeoutIntervalForRequest = 120
@@ -12,8 +27,30 @@ struct BridgeClient {
         return URLSession(configuration: config)
     }()
 
+    private static let quickSession: URLSession = {
+        let config = URLSessionConfiguration.default
+        config.timeoutIntervalForRequest = 8
+        config.timeoutIntervalForResource = 10
+        return URLSession(configuration: config)
+    }()
+
     func chat(_ message: String) async throws -> ChatResponse {
-        try await request(path: "/chat", method: "POST", body: ["message": message])
+        try await request(path: "/chat", method: "POST", body: ["message": message], budget: .blocking)
+    }
+
+    /// Poll the bridge's turn-completion primitive: unlike /last's single
+    /// unscoped slot (which holds whichever turn finished most recently,
+    /// with no link to the turn being waited on), /wait only returns 200
+    /// once a turn completed at or after `since`, so an older, already-seen
+    /// completion can never be mistaken for the one in flight.
+    func wait(since: Date, timeout: Int) async throws -> ChatResponse {
+        let sinceEpoch = Int(since.timeIntervalSince1970 - Self.skewSlack)
+        return try await request(
+            path: "/wait?since=\(sinceEpoch)&timeout=\(timeout)",
+            method: "GET",
+            body: nil,
+            budget: .blocking
+        )
     }
 
     func last() async throws -> ChatResponse {
@@ -52,8 +89,10 @@ struct BridgeClient {
         try await getJSON("/usage")
     }
 
-    private func request(path: String, method: String, body: [String: String]?) async throws -> ChatResponse {
-        let (data, status) = try await raw(path: path, method: method, body: body)
+    private func request(
+        path: String, method: String, body: [String: String]?, budget: RequestBudget = .quick
+    ) async throws -> ChatResponse {
+        let (data, status) = try await raw(path: path, method: method, body: body, budget: budget)
         let decoded = (try? JSONDecoder().decode(ChatResponse.self, from: data)) ?? ChatResponse()
         switch status {
         case 200, 202:
@@ -75,7 +114,9 @@ struct BridgeClient {
         return try JSONDecoder().decode(T.self, from: data)
     }
 
-    private func raw(path: String, method: String, body: [String: String]?) async throws -> (Data, Int) {
+    private func raw(
+        path: String, method: String, body: [String: String]?, budget: RequestBudget = .quick
+    ) async throws -> (Data, Int) {
         guard let url = BridgeConfig.url(path) else { throw BridgeError.badURL }
         var req = URLRequest(url: url)
         req.httpMethod = method
@@ -84,7 +125,8 @@ struct BridgeClient {
             req.setValue("application/json", forHTTPHeaderField: "Content-Type")
             req.httpBody = try JSONEncoder().encode(body)
         }
-        let (data, response) = try await Self.session.data(for: req)
+        let urlSession = budget == .blocking ? Self.session : Self.quickSession
+        let (data, response) = try await urlSession.data(for: req)
         return (data, (response as? HTTPURLResponse)?.statusCode ?? 0)
     }
 

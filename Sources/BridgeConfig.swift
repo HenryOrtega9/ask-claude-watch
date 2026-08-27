@@ -21,3 +21,28 @@ enum BridgeConfig {
         URL(string: "http://\(host):\(port)\(path)")
     }
 }
+
+/// Last successfully fetched /usage values, shared via the app group so the
+/// widget extension can fall back to a real (if stale) reading instead of
+/// rendering "no data" identically to a genuine 0% when the bridge is
+/// unreachable.
+enum UsageCache {
+    private static let fiveHourKey = "cachedUsageFiveHour"
+    private static let sevenDayKey = "cachedUsageSevenDay"
+    private static let dateKey = "cachedUsageDate"
+
+    static func save(fiveHour: Double?, sevenDay: Double?) {
+        let suite = BridgeConfig.suite
+        if let fiveHour { suite.set(fiveHour, forKey: fiveHourKey) } else { suite.removeObject(forKey: fiveHourKey) }
+        if let sevenDay { suite.set(sevenDay, forKey: sevenDayKey) } else { suite.removeObject(forKey: sevenDayKey) }
+        suite.set(Date(), forKey: dateKey)
+    }
+
+    static func load() -> (fiveHour: Double?, sevenDay: Double?, date: Date)? {
+        let suite = BridgeConfig.suite
+        guard let date = suite.object(forKey: dateKey) as? Date else { return nil }
+        let fiveHour = suite.object(forKey: fiveHourKey) as? Double
+        let sevenDay = suite.object(forKey: sevenDayKey) as? Double
+        return (fiveHour, sevenDay, date)
+    }
+}

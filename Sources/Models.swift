@@ -126,6 +126,10 @@ struct UsageResponse: Decodable {
     var seven_day_sonnet: UsageBucket?
     var seven_day_omelette: UsageBucket?
     var extra_usage: ExtraUsage?
+    /// Current OAuth usage shape: session/weekly caps, including any
+    /// per-model weekly sub-cap (e.g. a Fable-scoped limit), superseding the
+    /// legacy top-level buckets above when present.
+    var limits: [LimitEntry]?
 
     struct ExtraUsage: Decodable {
         var is_enabled: Bool?
@@ -133,6 +137,35 @@ struct UsageResponse: Decodable {
         var used_credits: Double?
         var monthly_limit: Double?
         var currency: String?
+    }
+}
+
+struct LimitEntry: Decodable, Identifiable {
+    var kind: String?
+    var group: String?
+    var percent: Double?
+    var resets_at: String?
+    var scope: Scope?
+
+    struct Scope: Decodable {
+        var model: ModelScope?
+        struct ModelScope: Decodable {
+            var display_name: String?
+        }
+    }
+
+    var id: String { "\(kind ?? "")|\(scope?.model?.display_name ?? "")" }
+
+    var displayLabel: String {
+        switch kind {
+        case "session": return "Session"
+        case "weekly_all": return "7-Day All"
+        case "weekly_scoped":
+            if let name = scope?.model?.display_name { return "7-Day \(name)" }
+            return "7-Day"
+        default:
+            return kind?.capitalized ?? "Limit"
+        }
     }
 }
 

@@ -23,6 +23,10 @@ struct UsageEntry: TimelineEntry {
     let date: Date
     let fiveHour: Double?
     let sevenDay: Double?
+    /// True when these values came from the last cached fetch rather than a
+    /// fresh one — the bridge was unreachable this refresh cycle. Distinct
+    /// from "no data" (nil values): a stale reading is real usage, just old.
+    var isStale: Bool = false
 }
 
 struct UsageProvider: TimelineProvider {
@@ -41,25 +45,38 @@ struct UsageProvider: TimelineProvider {
     func getTimeline(in context: Context, completion: @escaping (Timeline<UsageEntry>) -> Void) {
         Task {
             let entry = await Self.fetch()
+            let noData = entry.fiveHour == nil && entry.sevenDay == nil
             // The bridge caches /usage for 60s; watchOS grants roughly a
-            // handful of refreshes per hour, so 20 minutes is a safe ask.
-            let next = Date().addingTimeInterval(20 * 60)
+            // handful of refreshes per hour, so 20 minutes is a safe ask on
+            // success. On a failed/stale fetch, retry sooner rather than
+            // leaving a stale or empty ring showing for the full window.
+            let next = Date().addingTimeInterval(entry.isStale || noData ? 5 * 60 : 20 * 60)
             completion(Timeline(entries: [entry], policy: .after(next)))
         }
     }
 
     static func fetch() async -> UsageEntry {
-        let usage = try? await BridgeClient().usage()
-        return UsageEntry(
-            date: Date(),
-            fiveHour: usage?.five_hour?.utilization,
-            sevenDay: usage?.seven_day?.utilization
-        )
+        if let usage = try? await BridgeClient().usage() {
+            let fiveHour = usage.five_hour?.utilization
+            let sevenDay = usage.seven_day?.utilization
+            UsageCache.save(fiveHour: fiveHour, sevenDay: sevenDay)
+            return UsageEntry(date: Date(), fiveHour: fiveHour, sevenDay: sevenDay)
+        }
+        // Bridge unreachable this cycle: fall back to the last known-good
+        // reading (shared with the app via the app group) instead of
+        // rendering indistinguishable-from-genuinely-0% empty rings.
+        if let cached = UsageCache.load() {
+            return UsageEntry(date: cached.date, fiveHour: cached.fiveHour, sevenDay: cached.sevenDay, isStale: true)
+        }
+        return UsageEntry(date: Date(), fiveHour: nil, sevenDay: nil)
     }
 }
 
 private func usageTint(_ pct: Double?) -> Color {
-    switch pct ?? 0 {
+    // No data (unreachable bridge, nothing cached yet) must read visually
+    // distinct from a genuine, freshly-fetched 0% — never collapse to green.
+    guard let pct else { return .gray }
+    switch pct {
     case ..<50: return .green
     case ..<80: return .yellow
     default: return .red
@@ -78,46 +95,6 @@ private struct UsageRing: View {
         }
         .gaugeStyle(.accessoryCircular)
         .tint(usageTint(pct))
-    }
-}
-
-private struct RingArc: View {
-    let pct: Double?
-    let color: Color
-    let lineWidth: CGFloat
-
-    var body: some View {
-        let fraction = min(max((pct ?? 0) / 100, 0), 1)
-        ZStack {
-            Circle()
-                .stroke(color.opacity(0.25), lineWidth: lineWidth)
-            Circle()
-                .trim(from: 0, to: fraction)
-                .stroke(color, style: StrokeStyle(lineWidth: lineWidth, lineCap: .round))
-                .rotationEffect(.degrees(-90))
-        }
-    }
-}
-
-/// Activity-style concentric rings: outer = 5-hour, inner = 7-day. Each
-/// sweeps clockwise from 12 o'clock and fills as the limit is consumed.
-private struct ActivityRings: View {
-    let entry: UsageEntry
-
-    private static let lineWidth: CGFloat = 5.5
-
-    private static let coral = Color(red: 0.91, green: 0.44, blue: 0.29)
-
-    var body: some View {
-        ZStack {
-            RingArc(pct: entry.fiveHour, color: Self.coral, lineWidth: Self.lineWidth)
-            RingArc(pct: entry.sevenDay, color: .mint, lineWidth: Self.lineWidth)
-                .padding(Self.lineWidth + 1.5)
-            Image(systemName: "asterisk")
-                .font(.system(size: 11, weight: .bold))
-                .foregroundStyle(Self.coral)
-        }
-        .padding(1)
     }
 }
 
@@ -159,12 +136,17 @@ private struct UsageWidgetView: View {
                     UsageBar(label: "5h", pct: entry.fiveHour)
                     UsageBar(label: "7d", pct: entry.sevenDay)
                 }
-            case .accessoryCorner:
-                UsageRing(label: bucket.short, pct: pct)
             default:
-                ActivityRings(entry: entry)
+                // Covers .accessoryCorner and .accessoryCircular. The
+                // circular family previously drew a combined 5h+7d ring
+                // here regardless of `bucket`, so placing one of each kind
+                // as circular complications rendered two identical rings;
+                // each kind now shows only its own bucket, like every other
+                // family above.
+                UsageRing(label: bucket.short, pct: pct)
             }
         }
+        .opacity(entry.isStale ? 0.55 : 1)
         .containerBackground(for: .widget) { Color.clear }
     }
 }

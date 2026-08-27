@@ -9,6 +9,7 @@ struct AskClaudeWidgets: WidgetBundle {
     var body: some Widget {
         FiveHourWidget()
         SevenDayWidget()
+        DualRingWidget()
     }
 }
 
@@ -98,6 +99,46 @@ private struct UsageRing: View {
     }
 }
 
+private struct RingArc: View {
+    let pct: Double?
+    let color: Color
+    let lineWidth: CGFloat
+
+    var body: some View {
+        let fraction = min(max((pct ?? 0) / 100, 0), 1)
+        ZStack {
+            Circle()
+                .stroke(color.opacity(0.25), lineWidth: lineWidth)
+            Circle()
+                .trim(from: 0, to: fraction)
+                .stroke(color, style: StrokeStyle(lineWidth: lineWidth, lineCap: .round))
+                .rotationEffect(.degrees(-90))
+        }
+    }
+}
+
+/// Activity-style concentric rings: outer = 5-hour, inner = 7-day. Each
+/// sweeps clockwise from 12 o'clock and fills as the limit is consumed.
+private struct ActivityRings: View {
+    let entry: UsageEntry
+
+    private static let lineWidth: CGFloat = 5.5
+
+    private static let coral = Color(red: 0.91, green: 0.44, blue: 0.29)
+
+    var body: some View {
+        ZStack {
+            RingArc(pct: entry.fiveHour, color: Self.coral, lineWidth: Self.lineWidth)
+            RingArc(pct: entry.sevenDay, color: .mint, lineWidth: Self.lineWidth)
+                .padding(Self.lineWidth + 1.5)
+            Image(systemName: "asterisk")
+                .font(.system(size: 11, weight: .bold))
+                .foregroundStyle(Self.coral)
+        }
+        .padding(1)
+    }
+}
+
 private struct UsageBar: View {
     let label: String
     let pct: Double?
@@ -151,6 +192,16 @@ private struct UsageWidgetView: View {
     }
 }
 
+private struct DualRingWidgetView: View {
+    let entry: UsageEntry
+
+    var body: some View {
+        ActivityRings(entry: entry)
+            .opacity(entry.isStale ? 0.55 : 1)
+            .containerBackground(for: .widget) { Color.clear }
+    }
+}
+
 struct FiveHourWidget: Widget {
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: "AskClaudeUsage5h", provider: UsageProvider()) { entry in
@@ -170,5 +221,16 @@ struct SevenDayWidget: Widget {
         .configurationDisplayName("Claude 7-day")
         .description("7-day limit usage ring.")
         .supportedFamilies([.accessoryCircular, .accessoryCorner, .accessoryInline, .accessoryRectangular])
+    }
+}
+
+struct DualRingWidget: Widget {
+    var body: some WidgetConfiguration {
+        StaticConfiguration(kind: "AskClaudeUsageRings", provider: UsageProvider()) { entry in
+            DualRingWidgetView(entry: entry)
+        }
+        .configurationDisplayName("Claude Rings")
+        .description("Combined rings: outer 5-hour, inner 7-day.")
+        .supportedFamilies([.accessoryCircular, .accessoryCorner])
     }
 }

@@ -23,6 +23,7 @@ struct ChatResponse: Decodable {
 }
 
 enum ClaudeModel: String, CaseIterable, Identifiable {
+    case fable51 = "claude-fable-5-1"
     case fable
     case opus
     case sonnet
@@ -32,6 +33,7 @@ enum ClaudeModel: String, CaseIterable, Identifiable {
 
     var label: String {
         switch self {
+        case .fable51: return "Fable 5.1"
         case .fable: return "Fable 5"
         case .opus: return "Opus 4.8"
         case .sonnet: return "Sonnet 4.6"
@@ -59,10 +61,10 @@ enum EffortLevel: String, CaseIterable, Identifiable {
 
     var label: String { rawValue == "xhigh" ? "x-high" : rawValue }
 
-    /// xhigh is only accepted on Opus 1M and Fable 5 1M; everything else
-    /// tops out at max.
+    /// xhigh is only accepted on Opus 1M and Fable 1M variants; everything
+    /// else tops out at max.
     static func available(for model: ClaudeModel, oneMillion: Bool) -> [EffortLevel] {
-        let xhighOK = oneMillion && (model == .opus || model == .fable)
+        let xhighOK = oneMillion && (model == .opus || model == .fable || model == .fable51)
         return allCases.filter { $0 != .xhigh || xhighOK }
     }
 }

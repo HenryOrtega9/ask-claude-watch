@@ -6,14 +6,34 @@ import UserNotifications
 final class ChatStore: ObservableObject {
     @Published var messages: [ChatMessage] = []
     @Published var isSending = false
+    /// How many characters of each still-revealing message are visible.
+    /// Purely transient (never persisted, never restored by `load`), so only
+    /// a reply that lands live in this session ever types itself out.
+    @Published private(set) var revealed: [UUID: Int] = [:]
+    /// Follow-up the bridge suggests for the last completed turn, shown as a
+    /// tappable chip until the user sends anything.
+    @Published var suggestion: String?
 
     private let client = BridgeClient()
     private static let persistKey = "chatMessages"
     private static let maxPersisted = 50
+    /// Reveal timer resolution; the per-tick chunk is derived from the
+    /// configured rate, so this only sets how smooth the typing looks.
+    private static let revealTick = 0.05
+    /// A long reply is allowed to outrun the configured rate rather than
+    /// trail the bridge by more than this.
+    private static let maxRevealLag = 2.5
 
     /// When the in-flight turn's message was sent; drives the background
     /// /wait long-poll's `since` and clears once a complete reply lands.
     private var turnSentAt: Date?
+    private var revealTask: Task<Void, Never>?
+    private var revealLoopID = 0
+    private var suggestTask: Task<Void, Never>?
+    /// Bumped whenever a new turn starts (or the thread is reset), so a
+    /// suggestion poll that resolves late can tell it is answering a
+    /// superseded turn and drop its result.
+    private var turnGeneration = 0
 
     init() {
         load()
@@ -33,6 +53,117 @@ final class ChatStore: ObservableObject {
         #endif
     }
 
+    // @AppStorage only writes a key once the user changes it, so an absent
+    // key means "still on the default" rather than "off".
+    private var animateRepliesEnabled: Bool {
+        UserDefaults.standard.object(forKey: "animateReplies") as? Bool ?? true
+    }
+
+    private var animateCPS: Double {
+        Double(max(10, UserDefaults.standard.object(forKey: "animateCPS") as? Int ?? 120))
+    }
+
+    private var suggestRepliesEnabled: Bool {
+        UserDefaults.standard.object(forKey: "suggestReplies") as? Bool ?? true
+    }
+
+    /// What a bubble should draw right now: the whole text unless this
+    /// message is mid-reveal.
+    func displayText(for message: ChatMessage) -> String {
+        guard let count = revealed[message.id], count < message.text.count else { return message.text }
+        return String(message.text.prefix(count))
+    }
+
+    /// Start (or restart) the typewriter reveal for a reply that just landed.
+    private func beginReveal(for id: UUID) {
+        guard animateRepliesEnabled else { return }
+        guard let message = messages.first(where: { $0.id == id }), !message.text.isEmpty else { return }
+        revealed[id] = 0
+        startRevealLoop()
+    }
+
+    private func startRevealLoop() {
+        guard revealTask == nil else { return }
+        revealLoopID &+= 1
+        let loopID = revealLoopID
+        revealTask = Task { @MainActor [weak self] in
+            while let self, !self.revealed.isEmpty {
+                try? await Task.sleep(for: .seconds(Self.revealTick))
+                if Task.isCancelled { break }
+                self.advanceReveal()
+            }
+            // Only retire the slot if it still belongs to this loop: a
+            // cancelled loop can wake after a newer one already claimed it.
+            if let self, self.revealLoopID == loopID { self.revealTask = nil }
+        }
+    }
+
+    private func advanceReveal() {
+        for (id, shown) in revealed {
+            guard let message = messages.first(where: { $0.id == id }) else {
+                revealed[id] = nil
+                continue
+            }
+            let total = message.text.count
+            guard shown < total else {
+                revealed[id] = nil
+                continue
+            }
+            // Never trail the finished reply by more than maxRevealLag, so a
+            // long answer speeds up instead of crawling at the base rate.
+            let backlog = Double(total - shown)
+            let rate = max(animateCPS, backlog / Self.maxRevealLag)
+            let step = max(1, Int((rate * Self.revealTick).rounded(.up)))
+            let next = min(total, shown + step)
+            revealed[id] = next == total ? nil : next
+        }
+    }
+
+    /// Drop every in-progress reveal, showing the full text immediately.
+    private func finishReveals() {
+        revealTask?.cancel()
+        revealTask = nil
+        revealLoopID &+= 1
+        if !revealed.isEmpty { revealed.removeAll() }
+    }
+
+    /// After a completed turn: adopt the suggestion the reply already carried,
+    /// or long-poll /suggest for it once.
+    private func noteSuggestion(from response: ChatResponse) {
+        guard suggestRepliesEnabled else { return }
+        guard let seq = response.turn_seq else { return }
+        if let ready = Self.cleaned(response.suggestion) {
+            suggestion = ready
+            return
+        }
+        let generation = turnGeneration
+        suggestTask?.cancel()
+        suggestTask = Task { @MainActor [weak self] in
+            guard let self else { return }
+            defer { self.suggestTask = nil }
+            // after_seq is the turn *before* this one, so the bridge treats
+            // this turn's suggestion as the next thing it owes us.
+            guard let response = try? await self.client.suggest(afterSeq: seq - 1, timeout: 40) else { return }
+            // Drop it if a newer turn started, the user is mid-send, or the
+            // bridge simply had nothing to offer.
+            guard !Task.isCancelled, generation == self.turnGeneration, !self.isSending else { return }
+            if let text = Self.cleaned(response.suggestion) { self.suggestion = text }
+        }
+    }
+
+    private func clearSuggestion() {
+        suggestTask?.cancel()
+        suggestTask = nil
+        suggestion = nil
+    }
+
+    private static func cleaned(_ text: String?) -> String? {
+        guard let trimmed = text?.trimmingCharacters(in: .whitespacesAndNewlines), !trimmed.isEmpty else {
+            return nil
+        }
+        return trimmed
+    }
+
     var hasPartial: Bool {
         messages.contains(where: { $0.partial })
     }
@@ -50,6 +181,9 @@ final class ChatStore: ObservableObject {
         messages.append(ChatMessage(role: .user, text: trimmed))
         isSending = true
         turnSentAt = Date()
+        turnGeneration &+= 1
+        clearSuggestion()
+        finishReveals()
         // A stash from a previous turn must never be mistaken for this one.
         TurnNotifier.clearPendingReply()
         persist()
@@ -58,14 +192,17 @@ final class ChatStore: ObservableObject {
                 let response = try await client.chat(trimmed)
                 let partial = response.partial == true
                 let reply = response.reply ?? ""
-                messages.append(ChatMessage(
+                let message = ChatMessage(
                     role: .assistant,
                     text: reply.isEmpty ? "(empty reply)" : reply,
                     partial: partial
-                ))
+                )
+                messages.append(message)
                 if !partial {
                     turnSentAt = nil
                     TurnNotifier.clearPendingReply()
+                    beginReveal(for: message.id)
+                    noteSuggestion(from: response)
                 }
             } catch let urlError as URLError where urlError.code == .timedOut || urlError.code == .networkConnectionLost {
                 // The connection drops whenever the app suspends mid-turn; if
@@ -73,7 +210,9 @@ final class ChatStore: ObservableObject {
                 // surface it instead of a partial.
                 if let reply = TurnNotifier.peekPendingReply() {
                     TurnNotifier.clearPendingReply()
-                    messages.append(ChatMessage(role: .assistant, text: reply))
+                    let message = ChatMessage(role: .assistant, text: reply)
+                    messages.append(message)
+                    beginReveal(for: message.id)
                     turnSentAt = nil
                 } else {
                     messages.append(ChatMessage(role: .error, text: urlError.localizedDescription))
@@ -89,7 +228,9 @@ final class ChatStore: ObservableObject {
                 // finished reply; surface it instead of an error.
                 if let reply = TurnNotifier.peekPendingReply() {
                     TurnNotifier.clearPendingReply()
-                    messages.append(ChatMessage(role: .assistant, text: reply))
+                    let message = ChatMessage(role: .assistant, text: reply)
+                    messages.append(message)
+                    beginReveal(for: message.id)
                     turnSentAt = nil
                 } else {
                     messages.append(ChatMessage(role: .error, text: error.localizedDescription))
@@ -122,9 +263,11 @@ final class ChatStore: ObservableObject {
                     if let index = messages.lastIndex(where: { $0.partial }) {
                         messages[index].text = reply.isEmpty ? "(empty reply)" : reply
                         messages[index].partial = false
+                        beginReveal(for: messages[index].id)
                     }
                     turnSentAt = nil
                     TurnNotifier.clearPendingReply()
+                    noteSuggestion(from: response)
                 }
             } catch {
                 messages.append(ChatMessage(role: .error, text: error.localizedDescription))
@@ -137,6 +280,11 @@ final class ChatStore: ObservableObject {
     /// On backgrounding mid-turn: hand the wait to a background URLSession so
     /// a local notification fires when Claude finishes, wrist down or not.
     func appDidBackground() {
+        // Nothing on screen to type out, and no point holding the suggest
+        // long-poll open while suspended.
+        finishReveals()
+        suggestTask?.cancel()
+        suggestTask = nil
         guard isSending || hasPartial else { return }
         // Never fall back to the newest user message's date: with multiple
         // turns in history that message may belong to an already-completed
@@ -167,8 +315,11 @@ final class ChatStore: ObservableObject {
         if let index = messages[turnStart...].lastIndex(where: { $0.partial }) {
             messages[index].text = reply
             messages[index].partial = false
+            beginReveal(for: messages[index].id)
         } else {
-            messages.append(ChatMessage(role: .assistant, text: reply))
+            let message = ChatMessage(role: .assistant, text: reply)
+            messages.append(message)
+            beginReveal(for: message.id)
         }
         TurnNotifier.clearPendingReply()
         turnSentAt = nil
@@ -180,6 +331,9 @@ final class ChatStore: ObservableObject {
         guard !isSending else { return }
         isSending = true
         turnSentAt = nil
+        turnGeneration &+= 1
+        clearSuggestion()
+        finishReveals()
         TurnNotifier.shared.cancelAll()
         TurnNotifier.clearPendingReply()
         Task {

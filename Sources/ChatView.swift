@@ -16,7 +16,7 @@ struct ChatView: View {
                             .padding(.top, 8)
                     }
                     ForEach(store.messages) { message in
-                        MessageBubble(message: message)
+                        MessageBubble(message: message, text: store.displayText(for: message))
                             .id(message.id)
                     }
                     if store.isSending {
@@ -34,6 +34,7 @@ struct ChatView: View {
                         }
                         .font(.footnote)
                     }
+                    suggestionChip
                     inputField
                 }
             }
@@ -41,6 +42,13 @@ struct ChatView: View {
                 if let last = store.messages.last {
                     withAnimation { proxy.scrollTo(last.id, anchor: .bottom) }
                 }
+            }
+            .onChange(of: store.revealed) {
+                // Keep the growing bubble pinned to the bottom while it types
+                // itself out. No animation: the scroll fires ~20x a second,
+                // and animating each hop makes it stutter.
+                guard !store.revealed.isEmpty, let last = store.messages.last else { return }
+                proxy.scrollTo(last.id, anchor: .bottom)
             }
             .onChange(of: store.isSending) {
                 if store.isSending {
@@ -73,6 +81,35 @@ struct ChatView: View {
         }
     }
 
+    /// Tappable follow-up the bridge proposed for the last turn. Hidden
+    /// while a turn is in flight, and sent through the same path as typed
+    /// input (which also clears it).
+    @ViewBuilder
+    private var suggestionChip: some View {
+        if let suggestion = store.suggestion, !store.isSending {
+            Button {
+                store.send(suggestion)
+            } label: {
+                HStack(spacing: 4) {
+                    Image(systemName: "arrowshape.turn.up.left")
+                        .font(.system(size: 10))
+                    Text(suggestion)
+                        .font(.system(size: 12))
+                        .lineLimit(2)
+                        .truncationMode(.tail)
+                        .multilineTextAlignment(.leading)
+                }
+                .foregroundStyle(.secondary)
+                .padding(.horizontal, 9)
+                .padding(.vertical, 5)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(Color.gray.opacity(0.22), in: Capsule())
+            }
+            .buttonStyle(.plain)
+            .padding(.top, 2)
+        }
+    }
+
     private var inputField: some View {
         TextField("Ask…", text: $draft)
             .onSubmit {
@@ -86,12 +123,15 @@ struct ChatView: View {
 
 private struct MessageBubble: View {
     let message: ChatMessage
+    /// What to draw: the full body, or the prefix the store's typewriter
+    /// reveal has uncovered so far.
+    let text: String
 
     var body: some View {
         HStack {
             if message.role == .user { Spacer(minLength: 16) }
             VStack(alignment: .leading, spacing: 2) {
-                Text(message.text)
+                Text(text)
                     .font(.footnote)
                 if message.partial {
                     Text("partial")

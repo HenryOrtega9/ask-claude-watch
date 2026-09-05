@@ -53,6 +53,23 @@ struct BridgeClient {
         )
     }
 
+    /// Long-poll the bridge's follow-up suggestion for the turn after
+    /// `afterSeq`. Returns a response whose `suggestion` is nil both when the
+    /// bridge deliberately has nothing to offer (200) and when the poll window
+    /// expired first (202, error=wait_timeout); neither is an error here.
+    /// Runs on the blocking budget: like /wait it holds the connection open,
+    /// and the bridge is threaded, so it does not contend with the wait poll.
+    func suggest(afterSeq: Int, timeout: Int) async throws -> SuggestResponse {
+        let (data, status) = try await raw(
+            path: "/suggest?after_seq=\(afterSeq)&timeout=\(timeout)",
+            method: "GET",
+            body: nil,
+            budget: .blocking
+        )
+        guard status == 200 || status == 202 else { throw Self.error(for: status, data: data) }
+        return (try? JSONDecoder().decode(SuggestResponse.self, from: data)) ?? SuggestResponse()
+    }
+
     func last() async throws -> ChatResponse {
         try await request(path: "/last", method: "GET", body: nil)
     }

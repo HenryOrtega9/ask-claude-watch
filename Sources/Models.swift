@@ -20,6 +20,23 @@ struct ChatResponse: Decodable {
     var error: String?
     var session_id: String?
     var elapsed_ms: Int?
+    /// Monotonic turn number the bridge assigns to a completed turn. Present
+    /// on /wait and /last (and on /chat once the bridge that answered is new
+    /// enough); absent on older bridges, which simply disables suggestions.
+    var turn_seq: Int?
+    /// A follow-up the user might want to send next, when the bridge already
+    /// had it ready by the time the reply was handed over. Otherwise it is
+    /// fetched separately through GET /suggest.
+    var suggestion: String?
+}
+
+/// GET /suggest: 200 with a suggestion (or an explicit null when the bridge
+/// decided there is nothing worth suggesting), 202 + error=wait_timeout when
+/// the long-poll window expires first.
+struct SuggestResponse: Decodable {
+    var suggestion: String? = nil
+    var turn_seq: Int? = nil
+    var error: String? = nil
 }
 
 enum ClaudeModel: String, CaseIterable, Identifiable {

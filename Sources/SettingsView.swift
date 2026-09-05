@@ -8,6 +8,9 @@ struct SettingsView: View {
     @AppStorage("modelAlias") private var modelAlias = ClaudeModel.fable.rawValue
     @AppStorage("model1M") private var oneMillion = false
     @AppStorage("effortLevel") private var effortLevel = EffortLevel.auto.rawValue
+    @AppStorage("animateReplies") private var animateReplies = true
+    @AppStorage("animateCPS") private var animateCPS = 120
+    @AppStorage("suggestReplies") private var suggestReplies = true
     @State private var status = ""
     @State private var modelStatus = ""
     @State private var applying = false
@@ -39,6 +42,16 @@ struct SettingsView: View {
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                 }
+            }
+            Section("Chat") {
+                Toggle("Animate replies", isOn: $animateReplies)
+                Picker("Speed", selection: $animateCPS) {
+                    Text("Slow").tag(60)
+                    Text("Normal").tag(120)
+                    Text("Fast").tag(240)
+                }
+                .disabled(!animateReplies)
+                Toggle("Suggest replies", isOn: $suggestReplies)
             }
             Section("Bridge") {
                 TextField("Host", text: $host)

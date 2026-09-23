@@ -17,6 +17,16 @@ enum BridgeConfig {
     @AppStorage("bridgePort", store: BridgeConfig.suite) static var port: Int = BridgeConfig.defaultPort
     @AppStorage("bridgeToken", store: BridgeConfig.suite) static var token: String = BridgeConfig.defaultToken
 
+    /// The bridge moved from the MacBook Pro to the Mac mini on 2026-09-22.
+    /// Rewrites a stored host that still names the MacBook so existing
+    /// installs follow the move; any other value is left alone.
+    static func migrateToMacMiniIfNeeded() {
+        let saved = host.trimmingCharacters(in: .whitespacesAndNewlines)
+        if saved == "100.96.112.74" || saved == "henrys-macbook-pro.tail92466c.ts.net" {
+            host = "100.114.225.49"
+        }
+    }
+
     static func url(_ path: String) -> URL? {
         URL(string: "http://\(host):\(port)\(path)")
     }

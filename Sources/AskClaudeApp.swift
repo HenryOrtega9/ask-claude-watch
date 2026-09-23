@@ -4,6 +4,10 @@ import WatchKit
 /// Receives the system wake-up when the TurnNotifier's background /wait
 /// download finishes while the app is suspended or not running.
 final class ExtensionDelegate: NSObject, WKApplicationDelegate {
+    func applicationDidFinishLaunching() {
+        BridgeConfig.migrateToMacMiniIfNeeded()
+    }
+
     func handle(_ backgroundTasks: Set<WKRefreshBackgroundTask>) {
         for task in backgroundTasks {
             if let urlTask = task as? WKURLSessionRefreshBackgroundTask,

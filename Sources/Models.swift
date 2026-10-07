@@ -42,9 +42,12 @@ struct SuggestResponse: Decodable {
 enum ClaudeModel: String, CaseIterable, Identifiable {
     case fable51 = "claude-fable-5-1"
     case fable
+    case opus55 = "claude-opus-5-5"
     case opus
+    case sonnet55 = "claude-sonnet-5-5"
     case sonnet
-    case haiku
+    case haiku55 = "claude-haiku-5-5"
+    case haiku = "claude-haiku-4-5"
 
     var id: String { rawValue }
 
@@ -52,13 +55,17 @@ enum ClaudeModel: String, CaseIterable, Identifiable {
         switch self {
         case .fable51: return "Fable 5.1"
         case .fable: return "Fable 5"
+        case .opus55: return "Opus 5.5"
         case .opus: return "Opus 4.8"
+        case .sonnet55: return "Sonnet 5.5"
         case .sonnet: return "Sonnet 4.6"
+        case .haiku55: return "Haiku 5.5"
         case .haiku: return "Haiku 4.5"
         }
     }
 
-    /// Haiku is 200K-only; the others accept the [1m] long-context suffix.
+    /// Haiku 4.5 is 200K-only; the others accept the [1m] long-context suffix
+    /// (Haiku 5.5's was CLI-verified on its 2026-10-07 release day).
     var supports1M: Bool { self != .haiku }
 
     func commandValue(oneMillion: Bool) -> String {
@@ -78,10 +85,10 @@ enum EffortLevel: String, CaseIterable, Identifiable {
 
     var label: String { rawValue == "xhigh" ? "x-high" : rawValue }
 
-    /// xhigh is only accepted on Opus 1M and Fable 1M variants; everything
-    /// else tops out at max.
+    /// xhigh is only accepted on Opus 1M, Fable 1M and Sonnet 5.5 1M variants;
+    /// everything else tops out at max.
     static func available(for model: ClaudeModel, oneMillion: Bool) -> [EffortLevel] {
-        let xhighOK = oneMillion && (model == .opus || model == .fable || model == .fable51)
+        let xhighOK = oneMillion && (model == .opus55 || model == .opus || model == .fable || model == .fable51 || model == .sonnet55)
         return allCases.filter { $0 != .xhigh || xhighOK }
     }
 }

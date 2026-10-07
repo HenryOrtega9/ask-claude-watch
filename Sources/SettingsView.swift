@@ -71,6 +71,11 @@ struct SettingsView: View {
             }
         }
         .navigationTitle("Settings")
+        .onAppear {
+            // Builds before Haiku 5.5 stored the bare "haiku" alias, which the
+            // CLI now resolves to Haiku 5.5.
+            if modelAlias == "haiku" { modelAlias = ClaudeModel.haiku55.rawValue }
+        }
         .onChange(of: modelAlias) { _, _ in clampInvalidChoices() }
         .onChange(of: oneMillion) { _, _ in clampInvalidChoices() }
         .onChange(of: host) { _, _ in WidgetCenter.shared.reloadAllTimelines() }

@@ -85,10 +85,10 @@ enum EffortLevel: String, CaseIterable, Identifiable {
 
     var label: String { rawValue == "xhigh" ? "x-high" : rawValue }
 
-    /// xhigh is only accepted on Opus 1M, Fable 1M and Sonnet 5.5 1M variants;
-    /// everything else tops out at max.
+    /// xhigh is only accepted on Opus 1M, Fable 1M, Sonnet 5.5 1M and
+    /// Haiku 5.5 1M variants; everything else tops out at max.
     static func available(for model: ClaudeModel, oneMillion: Bool) -> [EffortLevel] {
-        let xhighOK = oneMillion && (model == .opus55 || model == .opus || model == .fable || model == .fable51 || model == .sonnet55)
+        let xhighOK = oneMillion && (model == .opus55 || model == .opus || model == .fable || model == .fable51 || model == .sonnet55 || model == .haiku55)
         return allCases.filter { $0 != .xhigh || xhighOK }
     }
 }

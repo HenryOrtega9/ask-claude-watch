@@ -275,17 +275,27 @@ enum WhoopDate {
         fractional.string(from: d)
     }
 
-    /// Local calendar dates as the gateway writes `week[].day`.
+    /// Calendar dates as the gateway writes `week[].day`. The strings are
+    /// already local dates, so the math runs in UTC: a fixed zone cannot
+    /// drift from the caller's calendar when the watch changes time zone
+    /// while this process is alive. Pair it with `calendar` below.
     private static let dayFormatter: DateFormatter = {
         let f = DateFormatter()
-        f.calendar = Calendar(identifier: .gregorian)
+        f.calendar = calendar
         f.locale = Locale(identifier: "en_US_POSIX")
-        f.timeZone = .current
+        f.timeZone = calendar.timeZone
         f.dateFormat = "yyyy-MM-dd"
         return f
     }()
 
-    /// Start of the given local day, or nil.
+    /// Gregorian in UTC, for day arithmetic and weekdays on parseDay results.
+    static let calendar: Calendar = {
+        var c = Calendar(identifier: .gregorian)
+        c.timeZone = TimeZone(identifier: "UTC") ?? TimeZone(secondsFromGMT: 0)!
+        return c
+    }()
+
+    /// UTC midnight of the given calendar date, or nil.
     static func parseDay(_ s: String?) -> Date? {
         guard let s else { return nil }
         return dayFormatter.date(from: s)
@@ -362,9 +372,12 @@ extension WhoopSummary {
         week = (0..<n).map { i in
             let date = cal.date(byAdding: .day, value: i - (n - 1), to: today) ?? today
             let rec = weekRecovery[i]
+            // The local date, written like the gateway does; dayString works
+            // in UTC and would shift a day east of Greenwich.
+            let ymd = cal.dateComponents([.year, .month, .day], from: date)
             return WeekDay(
                 cycleStart: WhoopDate.string(date.addingTimeInterval(6 * 3600)),
-                day: WhoopDate.dayString(date), recovery: rec,
+                day: String(format: "%04d-%02d-%02d", ymd.year ?? 0, ymd.month ?? 0, ymd.day ?? 0), recovery: rec,
                 band: rec.map(WhoopBand.forScore), strain: i < weekStrain.count ? weekStrain[i] : nil
             )
         }

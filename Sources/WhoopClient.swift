@@ -34,13 +34,17 @@ struct WhoopClient {
     /// One widget refresh: fetch, cache a decoded answer, and fall back to
     /// the cached summary when the gateway cannot be reached. `fetchOK` is
     /// false whenever the live fetch failed, cached data or not.
-    static func load() async -> (summary: WhoopSummary?, fetchOK: Bool) {
+    /// `tokenRejected` marks a 401/403: the gateway is up but refuses the
+    /// WHOOP token, which no amount of retrying fixes.
+    static func load() async -> (summary: WhoopSummary?, fetchOK: Bool, tokenRejected: Bool) {
         do {
             let summary = try await WhoopClient().summary()
             WhoopCache.save(summary)
-            return (summary, true)
+            return (summary, true, false)
+        } catch WhoopClientError.http(let status) where status == 401 || status == 403 {
+            return (WhoopCache.load(), false, true)
         } catch {
-            return (WhoopCache.load(), false)
+            return (WhoopCache.load(), false, false)
         }
     }
 }

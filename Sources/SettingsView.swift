@@ -5,6 +5,8 @@ struct SettingsView: View {
     @AppStorage("bridgeHost", store: BridgeConfig.suite) private var host = BridgeConfig.defaultHost
     @AppStorage("bridgePort", store: BridgeConfig.suite) private var port = BridgeConfig.defaultPort
     @AppStorage("bridgeToken", store: BridgeConfig.suite) private var token = BridgeConfig.defaultToken
+    @AppStorage("gatewayPort", store: BridgeConfig.suite) private var gatewayPort = BridgeConfig.defaultGatewayPort
+    @AppStorage("whoopToken", store: BridgeConfig.suite) private var whoopToken = BridgeConfig.defaultWhoopToken
     @AppStorage("modelAlias") private var modelAlias = ClaudeModel.fable.rawValue
     @AppStorage("model1M") private var oneMillion = false
     @AppStorage("effortLevel") private var effortLevel = EffortLevel.auto.rawValue
@@ -59,6 +61,11 @@ struct SettingsView: View {
                 TextField("Token", text: $token)
                     .textContentType(.password)
             }
+            Section("WHOOP") {
+                TextField("Gateway port", value: $gatewayPort, format: .number.grouping(.never))
+                TextField("WHOOP token", text: $whoopToken)
+                    .textContentType(.password)
+            }
             Section {
                 Button("Test connection") {
                     testConnection()
@@ -81,6 +88,8 @@ struct SettingsView: View {
         .onChange(of: host) { _, _ in WidgetCenter.shared.reloadAllTimelines() }
         .onChange(of: port) { _, _ in WidgetCenter.shared.reloadAllTimelines() }
         .onChange(of: token) { _, _ in WidgetCenter.shared.reloadAllTimelines() }
+        .onChange(of: gatewayPort) { _, _ in WidgetCenter.shared.reloadAllTimelines() }
+        .onChange(of: whoopToken) { _, _ in WidgetCenter.shared.reloadAllTimelines() }
     }
 
     /// Keep stored choices legal when the model changes underneath them:

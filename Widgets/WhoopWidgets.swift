@@ -15,7 +15,7 @@ import WidgetKit
 /// What a complication should show for one summary at one moment. Pure, so
 /// a timeline can hold future entries that age into the stale style.
 struct WhoopDisplay {
-    enum Offline { case setup, reconnect, error }
+    enum Offline { case setup, reconnect, error, token }
     enum Phase: Equatable { case live, stale, offline(Offline) }
 
     /// Design rule: 60 minutes with no successful sync from the Mac mini
@@ -36,6 +36,9 @@ struct WhoopDisplay {
 
     /// Strain is never pending: 0.0 until the new cycle has any.
     var strain: Double
+    /// False with no summary or before the gateway's first poll, when
+    /// `strain` is only the 0 placeholder and must not be shown as a value.
+    var strainKnown: Bool
     var kcal: Int?
 
     var sleepPending: Bool
@@ -74,24 +77,30 @@ struct WhoopDisplay {
 
     var isStale: Bool { phase == .stale }
 
-    init(summary: WhoopSummary?, now: Date) {
+    init(summary: WhoopSummary?, now: Date, tokenRejected: Bool = false) {
         let s = summary
         let fetched = s?.fetchedAtDate
 
-        switch s?.auth {
-        case .notConfigured?:
-            phase = .offline(.setup)
-        case .reauthRequired?:
-            phase = .offline(.reconnect)
-        case .error?, .unknown?:
-            // A gateway that cannot refresh still serves its last data;
-            // only with nothing to show is it an outright error.
-            phase = fetched == nil ? .offline(.error) : Self.agePhase(fetched, now)
-        case .ok?:
-            phase = Self.agePhase(fetched, now)
-        case nil:
-            // No answer from the gateway and nothing cached.
-            phase = .stale
+        // A rejected token outranks the cache: the gateway will refuse every
+        // retry, so old numbers would only age into "No data".
+        if tokenRejected {
+            phase = .offline(.token)
+        } else {
+            switch s?.auth {
+            case .notConfigured?:
+                phase = .offline(.setup)
+            case .reauthRequired?:
+                phase = .offline(.reconnect)
+            case .error?, .unknown?:
+                // A gateway that cannot refresh still serves its last data;
+                // only with nothing to show is it an outright error.
+                phase = fetched == nil ? .offline(.error) : Self.agePhase(fetched, now)
+            case .ok?:
+                phase = Self.agePhase(fetched, now)
+            case nil:
+                // No answer from the gateway and nothing cached.
+                phase = .stale
+            }
         }
         ageLabel = fetched.map { Self.age(from: $0, to: now) }
 
@@ -114,6 +123,7 @@ struct WhoopDisplay {
         rhr = rec?.rhrBpm
 
         strain = max(0, s?.strain.dayStrain ?? 0)
+        strainKnown = s != nil && fetched != nil
         kcal = s?.strain.kcal
 
         let sl = s?.sleep
@@ -146,8 +156,7 @@ struct WhoopDisplay {
         guard let last = WhoopDate.parseDay(feed.last?.day) else { return [] }
         var byDay: [String: WhoopSummary.WeekDay] = [:]
         for e in feed { if let d = e.day { byDay[d] = e } }
-        var greg = Calendar(identifier: .gregorian)
-        greg.timeZone = .current
+        let greg = WhoopDate.calendar
         let letters = Calendar.current.veryShortStandaloneWeekdaySymbols
         return (0..<7).map { i in
             let date = greg.date(byAdding: .day, value: i - 6, to: last) ?? last
@@ -469,6 +478,15 @@ struct WhoopOfflineCircularView: View {
     let tinted: Bool
     @Environment(\.whoopAccentPreview) private var accentPreview
 
+    private var label: String {
+        switch kind {
+        case .setup: return "WHOOP setup"
+        case .reconnect: return "Reconnect"
+        case .error: return "WHOOP error"
+        case .token: return "Bad token"
+        }
+    }
+
     var body: some View {
         let p = WhoopPalette(tinted: tinted, stale: false, preview: accentPreview)
         WhoopCanvas(w: 50, h: 50) { s, _ in
@@ -477,7 +495,7 @@ struct WhoopOfflineCircularView: View {
                 .frame(width: 50 * s, height: 50 * s)
             WhoopGlyph(center: CGPoint(x: 25 * s, y: 21 * s), r: 7 * s, color: p.fg2,
                        slash: tinted ? (accentPreview ?? .white) : .white, slashAccent: tinted)
-            Text(kind == .setup ? "WHOOP setup" : "Reconnect")
+            Text(label)
                 .font(whoopFont(6.4 * s))
                 .foregroundStyle(p.fg)
                 .lineLimit(1)
@@ -500,6 +518,7 @@ struct WhoopOfflineRectangularView: View {
         case .setup: return ("WHOOP setup", "Run whoop-auth on", "the Mac mini")
         case .reconnect: return ("Reconnect", "Sign in again with", "whoop-auth on the mini")
         case .error: return ("WHOOP error", "Check whoop-auth status", "on the Mac mini")
+        case .token: return ("Token rejected", "Update the WHOOP token", "in AskClaude Settings")
         }
     }
 
@@ -842,14 +861,14 @@ struct WhoopStrainTodayView: View {
                 .frame(width: 92 * s, alignment: .trailing)
                 .whoopAt(x: 170 * sx, baseline: 10 * s, anchor: 1)
 
-            Text(String(format: "%.1f", d.strain))
+            Text(d.strainKnown ? String(format: "%.1f", d.strain) : "--")
                 .font(whoopFont(22 * s)).monospacedDigit()
                 .foregroundStyle(p.fg)
                 .lineLimit(1)
                 .minimumScaleFactor(0.5)
                 .frame(width: 48 * s, alignment: .leading)
                 .whoopAt(x: 0, baseline: 38 * s)
-            Text(WhoopDisplay.zone(d.strain))
+            Text(d.strainKnown ? WhoopDisplay.zone(d.strain) : "")
                 .font(whoopFont(8.5 * s))
                 .foregroundStyle(tinted || d.isStale ? p.fg2 : p.metric(.strain))
                 .lineLimit(1)
@@ -1147,7 +1166,7 @@ struct WhoopThreeRingsView: View {
                  value: String(format: "%.1f", d.strain), percent: false,
                  frac: d.strain / 21,
                  detail: d.kcal.map { "\($0.formatted(.number)) cal" } ?? "-- cal",
-                 pending: false, note: ""),
+                 pending: !d.strainKnown, note: "No data"),
             Ring(id: 2, label: "SLEEP", metric: .sleep,
                  value: d.sleepPct.map(String.init) ?? "--", percent: true,
                  frac: Double(d.sleepPct ?? 0) / 100,
@@ -1235,20 +1254,26 @@ struct WhoopThreeRingsView: View {
 struct WhoopEntry: TimelineEntry {
     let date: Date
     let summary: WhoopSummary?
+    /// The gateway answered 401/403 to this refresh's fetch.
+    var tokenRejected = false
 
-    var display: WhoopDisplay { WhoopDisplay(summary: summary, now: date) }
+    var display: WhoopDisplay { WhoopDisplay(summary: summary, now: date, tokenRejected: tokenRejected) }
 }
 
 enum WhoopRefreshPolicy {
     /// Next reload: 15 min from 05:00 to 23:00 local (day strain climbs and
     /// the morning recovery lands), 60 min overnight, and 60 min when the
-    /// gateway's WHOOP auth is not ok. A failed fetch follows the same clock. The
-    /// overnight hours keep the day inside watchOS's reload budget; opening
-    /// AskClaude reloads on the spot without spending it.
-    static func nextRefresh(now: Date, summary: WhoopSummary?, fetchOK: Bool, calendar: Calendar = .current) -> Date {
+    /// gateway's WHOOP auth is not ok or it rejected the token. Any other
+    /// failed fetch follows the same clock. The overnight hours keep the day
+    /// inside watchOS's reload budget; opening AskClaude reloads on the spot
+    /// without spending it.
+    static func nextRefresh(now: Date, summary: WhoopSummary?, fetchOK: Bool, tokenRejected: Bool = false,
+                            calendar: Calendar = .current) -> Date {
         let minutes: Double
         let hour = calendar.component(.hour, from: now)
-        if let summary, fetchOK, summary.auth != .ok {
+        if tokenRejected {
+            minutes = 60
+        } else if let summary, fetchOK, summary.auth != .ok {
             minutes = 60
         } else if (5..<23).contains(hour) {
             minutes = 15
@@ -1281,18 +1306,21 @@ struct WhoopProvider: TimelineProvider {
             return
         }
         Task {
-            let (summary, _) = await WhoopClient.load()
-            completion(WhoopEntry(date: Date(), summary: summary))
+            let (summary, _, rejected) = await WhoopClient.load()
+            completion(WhoopEntry(date: Date(), summary: summary, tokenRejected: rejected))
         }
     }
 
     func getTimeline(in context: Context, completion: @escaping (Timeline<WhoopEntry>) -> Void) {
         Task {
             let now = Date()
-            let (summary, fetchOK) = await WhoopClient.load()
-            let entries = [WhoopEntry(date: now, summary: summary)]
-                + WhoopRefreshPolicy.staleEntries(for: summary, after: now)
-            let next = WhoopRefreshPolicy.nextRefresh(now: now, summary: summary, fetchOK: fetchOK)
+            let (summary, fetchOK, rejected) = await WhoopClient.load()
+            // A rejected token stays offline until the next reload, so the
+            // cached summary gets no stale entries to age into.
+            let entries = [WhoopEntry(date: now, summary: summary, tokenRejected: rejected)]
+                + (rejected ? [] : WhoopRefreshPolicy.staleEntries(for: summary, after: now))
+            let next = WhoopRefreshPolicy.nextRefresh(now: now, summary: summary, fetchOK: fetchOK,
+                                                      tokenRejected: rejected)
             completion(Timeline(entries: entries, policy: .after(next)))
         }
     }

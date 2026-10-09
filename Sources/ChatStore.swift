@@ -168,6 +168,21 @@ final class ChatStore: ObservableObject {
         messages.contains(where: { $0.partial })
     }
 
+    /// The bridge aborts any turn at its absolute ceiling (REPLY_BUDGET_S * 4
+    /// = 360s from send), so a partial bubble older than that plus a margin
+    /// can no longer be waiting on a running turn.
+    private static let partialLiveWindow: TimeInterval = 360 + 60
+
+    /// A partial bubble whose turn could still be running. Gates the
+    /// automatic check on activation and the background wait, which would
+    /// otherwise lock the composer on every wrist raise for a turn that can
+    /// never resolve. The manual "Check for full reply" button stays on
+    /// `hasPartial`.
+    var hasLivePartial: Bool {
+        guard let partial = messages.last(where: { $0.partial }) else { return false }
+        return Date().timeIntervalSince(partial.date) < Self.partialLiveWindow
+    }
+
     func send(_ text: String) {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty, !isSending else { return }
@@ -177,6 +192,9 @@ final class ChatStore: ObservableObject {
         // can appear.
         if let staleIndex = messages.lastIndex(where: { $0.partial }) {
             messages[staleIndex].partial = false
+            // That turn may still complete and bump the bridge's counter
+            // unseen, so the cursor can no longer key this turn's wait.
+            TurnCursor.clear()
         }
         messages.append(ChatMessage(role: .user, text: trimmed))
         isSending = true
@@ -190,6 +208,7 @@ final class ChatStore: ObservableObject {
         Task {
             do {
                 let response = try await client.chat(trimmed)
+                TurnCursor.note(response)
                 let partial = response.partial == true
                 let reply = response.reply ?? ""
                 let message = ChatMessage(
@@ -200,6 +219,10 @@ final class ChatStore: ObservableObject {
                 messages.append(message)
                 if !partial {
                     turnSentAt = nil
+                    // A background wait armed while this request was in
+                    // flight would otherwise stash and re-deliver this
+                    // same reply on the next activation.
+                    TurnNotifier.shared.cancelAll()
                     TurnNotifier.clearPendingReply()
                     beginReveal(for: message.id)
                     noteSuggestion(from: response)
@@ -209,6 +232,7 @@ final class ChatStore: ObservableObject {
                 // the background /wait already stashed the finished reply,
                 // surface it instead of a partial.
                 if let reply = TurnNotifier.peekPendingReply() {
+                    if let cursor = TurnNotifier.peekPendingReplyCursor() { TurnCursor.note(cursor) }
                     TurnNotifier.clearPendingReply()
                     let message = ChatMessage(role: .assistant, text: reply)
                     messages.append(message)
@@ -227,12 +251,17 @@ final class ChatStore: ObservableObject {
                 // network) can also mean the background /wait already has the
                 // finished reply; surface it instead of an error.
                 if let reply = TurnNotifier.peekPendingReply() {
+                    if let cursor = TurnNotifier.peekPendingReplyCursor() { TurnCursor.note(cursor) }
                     TurnNotifier.clearPendingReply()
                     let message = ChatMessage(role: .assistant, text: reply)
                     messages.append(message)
                     beginReveal(for: message.id)
                     turnSentAt = nil
                 } else {
+                    // Whether this message (or another client's turn, on a
+                    // 409) will still complete is unknown here, so the
+                    // cursor can no longer be trusted to key a later wait.
+                    TurnCursor.clear()
                     messages.append(ChatMessage(role: .error, text: error.localizedDescription))
                 }
             }
@@ -254,8 +283,13 @@ final class ChatStore: ObservableObject {
             ?? Date().addingTimeInterval(-60)
         Task {
             do {
-                let response = try await client.wait(since: since, timeout: 20)
+                let cursor = TurnCursor.current
+                let response = try await client.wait(
+                    since: since, afterSeq: cursor?.seq, bootID: cursor?.boot, timeout: 20
+                )
                 if let reply = response.reply, response.partial != true {
+                    TurnCursor.note(response)
+                    TurnNotifier.shared.cancelAll()
                     // Merge into the partial bubble this turn owns. If it is
                     // already gone (e.g. appDidActivate resolved it first),
                     // there is nothing to append — doing so would duplicate
@@ -285,7 +319,7 @@ final class ChatStore: ObservableObject {
         finishReveals()
         suggestTask?.cancel()
         suggestTask = nil
-        guard isSending || hasPartial else { return }
+        guard isSending || hasLivePartial else { return }
         // Never fall back to the newest user message's date: with multiple
         // turns in history that message may belong to an already-completed
         // turn, not the one this partial bubble is still waiting on. The
@@ -293,7 +327,7 @@ final class ChatStore: ObservableObject {
         let since = turnSentAt
             ?? messages.last(where: { $0.partial })?.date
             ?? Date().addingTimeInterval(-60)
-        TurnNotifier.shared.arm(since: since)
+        TurnNotifier.shared.arm(since: since, cursor: TurnCursor.current)
     }
 
     /// On activation: take over from any armed background wait and merge a
@@ -312,6 +346,21 @@ final class ChatStore: ObservableObject {
         // Scope the partial lookup to this turn: a bubble from an earlier,
         // already-superseded turn must never be targeted.
         let turnStart = messages.lastIndex(where: { $0.role == .user }) ?? messages.startIndex
+        // A background wait that was still live when the foreground /chat
+        // succeeded stashes that same reply again; drop it rather than
+        // appending a duplicate bubble. Prefer the turn identity, and fall
+        // back to the text for stashes from bridges that send none.
+        let stashCursor = TurnNotifier.peekPendingReplyCursor()
+        let seenByTurn = stashCursor.map(TurnCursor.hasSeen) ?? false
+        let seenByText = messages[turnStart...].contains(where: {
+            $0.role == .assistant && !$0.partial && $0.text == reply
+        })
+        let alreadyShown = seenByTurn || seenByText
+        if alreadyShown {
+            TurnNotifier.clearPendingReply()
+            return
+        }
+        if let stashCursor { TurnCursor.note(stashCursor) }
         if let index = messages[turnStart...].lastIndex(where: { $0.partial }) {
             messages[index].text = reply
             messages[index].partial = false

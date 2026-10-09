@@ -28,6 +28,13 @@ struct ChatResponse: Decodable {
     /// had it ready by the time the reply was handed over. Otherwise it is
     /// fetched separately through GET /suggest.
     var suggestion: String?
+    /// Identifies the bridge process that assigned `turn_seq`; the counter
+    /// restarts at 0 with the daemon, so a seq is only comparable within one
+    /// boot. On /chat, /wait and /last from bridges new enough to send it.
+    var boot_id: String?
+    /// Why a turn was aborted (503 turn_aborted): never_landed,
+    /// session_dead or ceiling.
+    var reason: String?
 }
 
 /// GET /suggest: 200 with a suggestion (or an explicit null when the bridge
@@ -156,6 +163,15 @@ struct UsageResponse: Decodable {
     /// per-model weekly sub-cap (e.g. a Fable-scoped limit), superseding the
     /// legacy top-level buckets above when present.
     var limits: [LimitEntry]?
+    /// The bridge could not reach Anthropic and served its last good
+    /// reading instead; `cached_at` (epoch seconds) is when that reading was
+    /// actually fetched.
+    var stale: Bool?
+    var cached_at: Double?
+
+    var isStale: Bool { stale == true }
+
+    var cachedAtDate: Date? { cached_at.map { Date(timeIntervalSince1970: $0) } }
 
     struct ExtraUsage: Decodable {
         var is_enabled: Bool?

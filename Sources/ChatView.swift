@@ -57,7 +57,10 @@ struct ChatView: View {
             }
         }
         .onChange(of: scenePhase) {
-            if scenePhase == .active && store.hasPartial && !store.isSending {
+            // Only a partial whose turn could still be running: an older one
+            // can never resolve, and checking it would lock the composer on
+            // every wrist raise. The button above still covers it manually.
+            if scenePhase == .active && store.hasLivePartial && !store.isSending {
                 store.checkAgain()
             }
         }

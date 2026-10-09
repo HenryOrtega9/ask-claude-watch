@@ -41,16 +41,30 @@ struct BridgeClient {
     /// Poll the bridge's turn-completion primitive: unlike /last's single
     /// unscoped slot (which holds whichever turn finished most recently,
     /// with no link to the turn being waited on), /wait only returns 200
-    /// once a turn completed at or after `since`, so an older, already-seen
-    /// completion can never be mistaken for the one in flight.
-    func wait(since: Date, timeout: Int) async throws -> ChatResponse {
-        let sinceEpoch = Int(since.timeIntervalSince1970 - Self.skewSlack)
-        return try await request(
-            path: "/wait?since=\(sinceEpoch)&timeout=\(timeout)",
+    /// once a turn completed after the one the caller already saw, so an
+    /// older, already-seen completion can never be mistaken for the one in
+    /// flight. `afterSeq` + `bootID` (the last turn_seq seen and the bridge
+    /// boot it came from) is the skew-proof key; the bridge falls back to
+    /// the clock-based `since` when they are absent or the boot changed.
+    func wait(since: Date, afterSeq: Int? = nil, bootID: String? = nil, timeout: Int) async throws -> ChatResponse {
+        try await request(
+            path: Self.waitPath(since: since, afterSeq: afterSeq, bootID: bootID, timeout: timeout),
             method: "GET",
             body: nil,
             budget: .blocking
         )
+    }
+
+    /// Shared with TurnNotifier's background long-poll so both build the
+    /// same /wait query.
+    static func waitPath(since: Date, afterSeq: Int?, bootID: String?, timeout: Int) -> String {
+        let sinceEpoch = Int(since.timeIntervalSince1970 - skewSlack)
+        var path = "/wait?since=\(sinceEpoch)&timeout=\(timeout)"
+        if let afterSeq, let bootID,
+           let boot = bootID.addingPercentEncoding(withAllowedCharacters: .alphanumerics) {
+            path += "&after_seq=\(afterSeq)&boot=\(boot)"
+        }
+        return path
     }
 
     /// Long-poll the bridge's follow-up suggestion for the turn after
@@ -119,7 +133,16 @@ struct BridgeClient {
         case 409:
             throw BridgeError.turnInFlight
         case 503:
-            throw BridgeError.notReady
+            // The bridge also answers 503 for a turn it aborted or a paste
+            // it could not deliver; only session_not_ready is transient.
+            switch decoded.error {
+            case nil, "session_not_ready":
+                throw BridgeError.notReady
+            case "turn_aborted":
+                throw BridgeError.server("Turn aborted (\(decoded.reason ?? "unknown")). Try again.")
+            case let message?:
+                throw BridgeError.server(message)
+            }
         default:
             throw BridgeError.server(decoded.error ?? "Bridge error (HTTP \(status))")
         }

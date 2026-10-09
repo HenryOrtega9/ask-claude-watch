@@ -25,7 +25,8 @@ struct UsageEntry: TimelineEntry {
     let fiveHour: Double?
     let sevenDay: Double?
     /// True when these values came from the last cached fetch rather than a
-    /// fresh one — the bridge was unreachable this refresh cycle. Distinct
+    /// fresh one — the bridge was unreachable this refresh cycle, or it
+    /// could not reach Anthropic and flagged its own reading stale. Distinct
     /// from "no data" (nil values): a stale reading is real usage, just old.
     var isStale: Bool = false
 }
@@ -60,6 +61,17 @@ struct UsageProvider: TimelineProvider {
         if let usage = try? await BridgeClient().usage() {
             let fiveHour = usage.five_hour?.utilization
             let sevenDay = usage.seven_day?.utilization
+            if usage.isStale {
+                // The bridge reached us but not Anthropic, and served its
+                // last good reading: show it dimmed, retry on the short
+                // cadence, and never stamp it into the cache as fresh.
+                return UsageEntry(
+                    date: usage.cachedAtDate ?? Date(),
+                    fiveHour: fiveHour,
+                    sevenDay: sevenDay,
+                    isStale: true
+                )
+            }
             UsageCache.save(fiveHour: fiveHour, sevenDay: sevenDay)
             return UsageEntry(date: Date(), fiveHour: fiveHour, sevenDay: sevenDay)
         }

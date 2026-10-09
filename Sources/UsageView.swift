@@ -43,6 +43,11 @@ struct UsageView: View {
                 if let extra = usage.extra_usage, extra.is_enabled == true {
                     extraUsageRow(extra)
                 }
+                if usage.isStale {
+                    Text("Bridge can't reach Anthropic; showing its last reading.")
+                        .font(.system(size: 10))
+                        .foregroundStyle(.orange)
+                }
                 if let lastLoaded {
                     HStack(spacing: 3) {
                         Text("Updated")
@@ -116,11 +121,19 @@ struct UsageView: View {
         loading = true
         defer { loading = false }
         do {
-            usage = try await client.usage()
+            let fetched = try await client.usage()
+            usage = fetched
             error = nil
-            lastLoaded = Date()
-            UsageCache.save(fiveHour: usage?.five_hour?.utilization, sevenDay: usage?.seven_day?.utilization)
-            WidgetCenter.shared.reloadAllTimelines()
+            if fetched.isStale {
+                // A stale fallback is as old as the bridge's last good fetch
+                // (unknown on bridges that don't send cached_at), never "just
+                // now", and must not overwrite the shared cache date.
+                lastLoaded = fetched.cachedAtDate
+            } else {
+                lastLoaded = Date()
+                UsageCache.save(fiveHour: fetched.five_hour?.utilization, sevenDay: fetched.seven_day?.utilization)
+                WidgetCenter.shared.reloadAllTimelines()
+            }
         } catch {
             self.error = error.localizedDescription
         }

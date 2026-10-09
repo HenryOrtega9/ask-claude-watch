@@ -9,6 +9,10 @@ enum BridgeConfig {
     static let defaultHost = Secrets.bridgeHost
     static let defaultPort = 8787
     static let defaultToken = Secrets.bridgeToken
+    /// The vault gateway (WHOOP summary) runs on the same Mac mini as the
+    /// bridge, on its own port, and takes its own read-only token.
+    static let defaultGatewayPort = 8788
+    static let defaultWhoopToken = Secrets.whoopToken
 
     static let appGroup = "group.dev.henryortega.askclaude"
     static let suite = UserDefaults(suiteName: BridgeConfig.appGroup) ?? .standard
@@ -16,6 +20,8 @@ enum BridgeConfig {
     @AppStorage("bridgeHost", store: BridgeConfig.suite) static var host: String = BridgeConfig.defaultHost
     @AppStorage("bridgePort", store: BridgeConfig.suite) static var port: Int = BridgeConfig.defaultPort
     @AppStorage("bridgeToken", store: BridgeConfig.suite) static var token: String = BridgeConfig.defaultToken
+    @AppStorage("gatewayPort", store: BridgeConfig.suite) static var gatewayPort: Int = BridgeConfig.defaultGatewayPort
+    @AppStorage("whoopToken", store: BridgeConfig.suite) static var whoopToken: String = BridgeConfig.defaultWhoopToken
 
     /// The bridge moved from the MacBook Pro to the Mac mini on 2026-09-22.
     /// Rewrites a stored host that still names the MacBook so existing
@@ -29,6 +35,11 @@ enum BridgeConfig {
 
     static func url(_ path: String) -> URL? {
         URL(string: "http://\(host):\(port)\(path)")
+    }
+
+    /// A vault gateway URL: same tailnet host as the bridge, gateway port.
+    static func gatewayURL(_ path: String) -> URL? {
+        URL(string: "http://\(host):\(gatewayPort)\(path)")
     }
 }
 

@@ -1,5 +1,6 @@
 import SwiftUI
 import WatchKit
+import WidgetKit
 
 /// Receives the system wake-up when the TurnNotifier's background /wait
 /// download finishes while the app is suspended or not running.
@@ -43,6 +44,7 @@ struct AskClaudeApp: App {
                     store.appDidBackground()
                 case .active:
                     store.appDidActivate()
+                    WhoopWidgetKinds.all.forEach { WidgetCenter.shared.reloadTimelines(ofKind: $0) }
                 default:
                     break
                 }

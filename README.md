@@ -22,6 +22,8 @@ the wrist drops.
    enum Secrets {
        static let bridgeHost = "<tailscale-ip-of-your-mac>"
        static let bridgeToken = "<token>"
+       // Read-only WHOOP token from ~/.config/vault-gateway/whoop-read-token
+       static let whoopToken = "<whoop-read-token>"
    }
    ```
 

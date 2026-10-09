@@ -25,6 +25,11 @@
 		AB01000000000000000000B5 /* Secrets.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E350AD0799C1209D84E8D0A /* Secrets.swift */; };
 		AB01000000000000000000B6 /* AskClaudeWidgets.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = AB01000000000000000000A3 /* AskClaudeWidgets.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		CD02000000000000000000B1 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = CD02000000000000000000A1 /* Assets.xcassets */; };
+		AB03000000000000000000B1 /* WhoopModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB03000000000000000000A1 /* WhoopModels.swift */; };
+		AB03000000000000000000B2 /* WhoopClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB03000000000000000000A2 /* WhoopClient.swift */; };
+		AB03000000000000000000D1 /* WhoopModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB03000000000000000000A1 /* WhoopModels.swift */; };
+		AB03000000000000000000D2 /* WhoopClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB03000000000000000000A2 /* WhoopClient.swift */; };
+		AB03000000000000000000D3 /* WhoopWidgets.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB03000000000000000000A3 /* WhoopWidgets.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -45,6 +50,9 @@
 		AB01000000000000000000A3 /* AskClaudeWidgets.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = AskClaudeWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		CD02000000000000000000A1 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		AB02000000000000000000B2 /* TurnNotifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TurnNotifier.swift; sourceTree = "<group>"; };
+		AB03000000000000000000A1 /* WhoopModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WhoopModels.swift; sourceTree = "<group>"; };
+		AB03000000000000000000A2 /* WhoopClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WhoopClient.swift; sourceTree = "<group>"; };
+		AB03000000000000000000A3 /* WhoopWidgets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WhoopWidgets.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -64,6 +72,8 @@
 				2B8D3FA1E5C702B46F9D1C22 /* SessionsView.swift */,
 				AB02000000000000000000B2 /* TurnNotifier.swift */,
 				4DAF51C307E924D6819F3E44 /* UsageView.swift */,
+				AB03000000000000000000A2 /* WhoopClient.swift */,
+				AB03000000000000000000A1 /* WhoopModels.swift */,
 			);
 			path = Sources;
 			sourceTree = "<group>";
@@ -82,6 +92,7 @@
 			children = (
 				AB01000000000000000000A1 /* AskClaudeWidgets.swift */,
 				AB01000000000000000000A2 /* Info.plist */,
+				AB03000000000000000000A3 /* WhoopWidgets.swift */,
 			);
 			path = Widgets;
 			sourceTree = "<group>";
@@ -229,6 +240,8 @@
 				004BE1D40BFE7F5194C97D1A /* SettingsView.swift in Sources */,
 				1A7C2E90D4B6F1A35E8C0B11 /* SessionsView.swift in Sources */,
 				3C9E40B2F6D813C5709E2D33 /* UsageView.swift in Sources */,
+				AB03000000000000000000B1 /* WhoopModels.swift in Sources */,
+				AB03000000000000000000B2 /* WhoopClient.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -241,6 +254,9 @@
 				AB01000000000000000000B3 /* BridgeConfig.swift in Sources */,
 				AB01000000000000000000B4 /* Models.swift in Sources */,
 				AB01000000000000000000B5 /* Secrets.swift in Sources */,
+				AB03000000000000000000D1 /* WhoopModels.swift in Sources */,
+				AB03000000000000000000D2 /* WhoopClient.swift in Sources */,
+				AB03000000000000000000D3 /* WhoopWidgets.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

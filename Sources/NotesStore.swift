@@ -10,11 +10,20 @@ struct CachedNote: Codable {
     var truncated: Bool?
 }
 
-/// On-disk copies of the last 20 opened notes plus the last recent list,
-/// as JSON in Application Support, so the Notes page still reads offline.
-/// An actor so file writes stay off the main thread.
+/// A folder listing as last fetched from the gateway.
+struct CachedFolder: Codable {
+    let path: String
+    let listing: FolderListing
+    let fetchedAt: Date
+}
+
+/// On-disk copies of the last 20 opened notes, the last 50 browsed folder
+/// listings and the last recent list, as JSON in Application Support, so
+/// the Notes page still reads offline. An actor so file writes stay off
+/// the main thread.
 actor NoteDiskCache {
     static let maxNotes = 20
+    static let maxFolders = 50
 
     private struct RecentList: Codable {
         let files: [VaultNote]
@@ -23,6 +32,7 @@ actor NoteDiskCache {
 
     private let directory: URL
     private var notes: [CachedNote]?
+    private var folders: [CachedFolder]?
 
     init() {
         let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
@@ -32,6 +42,7 @@ actor NoteDiskCache {
 
     private var notesFile: URL { directory.appendingPathComponent("notes.json") }
     private var recentFile: URL { directory.appendingPathComponent("recent.json") }
+    private var foldersFile: URL { directory.appendingPathComponent("folders.json") }
 
     /// Most recently fetched first.
     func all() -> [CachedNote] {
@@ -55,6 +66,29 @@ actor NoteDiskCache {
         if list.count > Self.maxNotes { list.removeLast(list.count - Self.maxNotes) }
         notes = list
         write(list, to: notesFile)
+        return entry
+    }
+
+    /// Most recently fetched first.
+    private func allFolders() -> [CachedFolder] {
+        if let folders { return folders }
+        let loaded = (try? Data(contentsOf: foldersFile)).flatMap { try? Self.decoder.decode([CachedFolder].self, from: $0) } ?? []
+        folders = loaded
+        return loaded
+    }
+
+    func folder(_ path: String) -> CachedFolder? {
+        allFolders().first { $0.path == path }
+    }
+
+    @discardableResult
+    func putFolder(_ listing: FolderListing, at path: String) -> CachedFolder {
+        let entry = CachedFolder(path: path, listing: listing, fetchedAt: Date())
+        var list = allFolders().filter { $0.path != path }
+        list.insert(entry, at: 0)
+        if list.count > Self.maxFolders { list.removeLast(list.count - Self.maxFolders) }
+        folders = list
+        write(list, to: foldersFile)
         return entry
     }
 
@@ -217,6 +251,20 @@ final class NotesStore: ObservableObject {
             pinned.append(path)
         }
         UserDefaults.standard.set(pinned, forKey: Self.pinnedKey)
+    }
+
+    // MARK: Folders
+
+    func cachedFolder(_ path: String) async -> CachedFolder? {
+        await cache.folder(path)
+    }
+
+    /// Fetches a folder listing live and refreshes its cached copy. Keyed
+    /// by the requested path, so the root stays "" whatever the gateway
+    /// echoes back.
+    func fetchFolder(_ path: String) async throws -> CachedFolder {
+        let listing = try await client.folder(path)
+        return await cache.putFolder(listing, at: path)
     }
 
     // MARK: Notes

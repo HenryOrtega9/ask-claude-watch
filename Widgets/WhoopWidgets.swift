@@ -7,6 +7,7 @@ import WidgetKit
 ///   C6 Triad (accessoryCircular)
 ///   R6 Strain Today, R8 Week Trends and R10 Three Rings + Detail
 ///   (accessoryRectangular, round 2, middle slot)
+///   R11 Twin Rings and R12 Split Gauges (accessoryRectangular, round 3)
 /// Geometry follows the gallery's generator in watch points: circular art on
 /// a 50 x 50 grid, rectangular on 170 x 78, scaled to the real slot size.
 
@@ -1247,6 +1248,298 @@ struct WhoopThreeRingsView: View {
     }
 }
 
+// MARK: - R11 Twin Rings
+
+/// Recovery and strain as two rings side by side, the number inside each,
+/// with the label and two detail lines beside it (HRV and RHR; zone and
+/// calories).
+struct WhoopTwinRingsView: View {
+    let display: WhoopDisplay
+    let tinted: Bool
+    @Environment(\.whoopAccentPreview) private var accentPreview
+
+    var body: some View {
+        if case .offline(let kind) = display.phase {
+            WhoopOfflineRectangularView(kind: kind, tinted: tinted)
+        } else {
+            rings
+        }
+    }
+
+    private struct Ring: Identifiable {
+        let id: Int
+        let cx: CGFloat
+        let label: String
+        let metric: WhoopMetric
+        let value: String
+        let percent: Bool
+        let frac: Double
+        let lines: (String, String)
+        let pending: Bool
+        let note: String
+    }
+
+    private var data: [Ring] {
+        let d = display
+        let kcal = d.kcal.map { "\($0.formatted(.number)) cal" } ?? "-- cal"
+        return [
+            Ring(id: 0, cx: 21, label: "RECOVERY", metric: .recovery(d.band),
+                 value: d.recovery.map(String.init) ?? "--", percent: true,
+                 frac: Double(d.recovery ?? 0) / 100,
+                 lines: ("HRV \(d.hrv.map(String.init) ?? "--")", "RHR \(d.rhr.map(String.init) ?? "--")"),
+                 pending: d.recoveryPending, note: d.recoveryNote),
+            Ring(id: 1, cx: 104, label: "STRAIN", metric: .strain,
+                 value: String(format: "%.1f", d.strain), percent: false,
+                 frac: d.strain / 21,
+                 lines: (WhoopDisplay.zone(d.strain), d.isStale ? (d.ageLabel.map { "\($0) ago" } ?? "No data") : kcal),
+                 pending: !d.strainKnown, note: "No data"),
+        ]
+    }
+
+    private var rings: some View {
+        let p = WhoopPalette(tinted: tinted, stale: display.isStale, preview: accentPreview)
+        let r: CGFloat = 18, w: CGFloat = 4.6, cy: CGFloat = 39, nsize: CGFloat = 13.5
+        let items = data
+        return WhoopCanvas(w: 170, h: 78, stretchX: true) { s, sx in
+            ForEach(items) { ring in
+                let cx = ring.cx * sx
+                let c = CGPoint(x: cx, y: cy * s)
+                let tx = cx + (r + 5.5) * s
+                let textW = (ring.id == 0 ? 81 : 170) * sx - tx
+                if ring.pending {
+                    WhoopArc(center: c, radius: r * s, from: 0, to: 360)
+                        .stroke(p.fg2, style: dottedStroke(2.3 * s, gap: 4.6 * s))
+                    WhoopDots(cx: cx, cy: cy * s, r: 1.5 * s, gap: 4.4 * s, color: p.fg)
+                } else {
+                    let ac = p.metric(ring.metric, accent: true)
+                    WhoopArc(center: c, radius: r * s, from: 0, to: 360)
+                        .stroke(ac, lineWidth: w * s)
+                        .opacity(0.3)
+                        .widgetAccentable(p.accents)
+                    WhoopArc(center: c, radius: r * s, from: 0, to: 360 * min(max(ring.frac, 0.012), 1))
+                        .stroke(ac, style: roundStroke(w * s))
+                        .widgetAccentable(p.accents)
+                    valueText(ring, p: p, size: nsize * s)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.6)
+                        .frame(width: (2 * r - w - 3) * s)
+                        .whoopAt(x: cx + (ring.percent && ring.value != "--" ? 2.3 * s : 0),
+                                 baseline: (cy + 4.8) * s, anchor: 0.5)
+                }
+                Text(ring.label)
+                    .font(whoopFont(7 * s))
+                    .tracking(0.3 * s)
+                    .foregroundStyle(tinted || ring.pending || display.isStale ? p.fg2 : p.metric(ring.metric))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
+                    .frame(width: textW, alignment: .leading)
+                    .whoopAt(x: tx, baseline: 27 * s)
+                Text(ring.pending ? ring.note : ring.lines.0)
+                    .font(whoopFont(8.6 * s, .semibold))
+                    .monospacedDigit()
+                    .foregroundStyle(ring.pending ? p.fg2 : p.fg)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
+                    .frame(width: textW, alignment: .leading)
+                    .whoopAt(x: tx, baseline: 41 * s)
+                if !ring.pending {
+                    Text(ring.lines.1)
+                        .font(whoopFont(8 * s, .semibold))
+                        .monospacedDigit()
+                        .foregroundStyle(p.fg2)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.6)
+                        .frame(width: textW, alignment: .leading)
+                        .whoopAt(x: tx, baseline: 52.5 * s)
+                }
+            }
+        }
+    }
+
+    private func valueText(_ ring: Ring, p: WhoopPalette, size: CGFloat) -> Text {
+        let main = Text(ring.value)
+            .font(whoopFont(size))
+            .foregroundStyle(p.fg)
+        guard ring.percent, ring.value != "--" else { return main.monospacedDigit() }
+        return (main + Text("%").font(whoopFont(size * 0.52)).foregroundStyle(p.fg2)).monospacedDigit()
+    }
+}
+
+// MARK: - R12 Split Gauges
+
+/// Two columns split by a hairline, each a big number over a horizontal
+/// gauge with a marker at today's value. The recovery gauge is cut at the
+/// band breaks 33 and 66 and colored by band; the strain gauge is cut at
+/// the zone breaks 10, 14 and 18 on 0 to 21.
+struct WhoopSplitGaugesView: View {
+    let display: WhoopDisplay
+    let tinted: Bool
+    @Environment(\.whoopAccentPreview) private var accentPreview
+
+    var body: some View {
+        if case .offline(let kind) = display.phase {
+            WhoopOfflineRectangularView(kind: kind, tinted: tinted)
+        } else {
+            columns
+        }
+    }
+
+    private struct Segment: Identifiable {
+        let id: Int
+        let from: Double
+        let to: Double
+        let color: Color
+    }
+
+    /// One gauge from `x0` to `x1` (design points) at the track's top `y`.
+    /// A nil `frac` draws the bare track with no fill and no marker.
+    @ViewBuilder
+    private func gauge(_ segs: [Segment], frac: Double?, x0: CGFloat, x1: CGFloat,
+                       p: WhoopPalette, s: CGFloat, sx: CGFloat) -> some View {
+        let y: CGFloat = 60, h: CGFloat = 4, gap: CGFloat = 0.8
+        let width = (x1 - x0) * sx
+        let left = x0 * sx
+        ForEach(segs) { seg in
+            let a = left + CGFloat(seg.from) * width + (seg.from > 0 ? gap * s : 0)
+            let b = left + CGFloat(seg.to) * width - (seg.to < 1 ? gap * s : 0)
+            RoundedRectangle(cornerRadius: 1.6 * s)
+                .fill(seg.color)
+                .opacity(0.28)
+                .frame(width: max(0, b - a), height: h * s)
+                .offset(x: a, y: y * s)
+                .widgetAccentable(p.accents)
+            if let frac {
+                let end = min(b, left + CGFloat(min(max(frac, 0), 1)) * width)
+                if end > a {
+                    RoundedRectangle(cornerRadius: 1.6 * s)
+                        .fill(seg.color)
+                        .frame(width: end - a, height: h * s)
+                        .offset(x: a, y: y * s)
+                        .widgetAccentable(p.accents)
+                }
+            }
+        }
+        if let frac {
+            // The track ends are the slot edges, so keep the marker's center a
+            // radius in from them or half the dot is drawn outside the slot.
+            let r = 3.4 * s
+            let cx = left + CGFloat(min(max(frac, 0), 1)) * width
+            Circle()
+                .fill(p.fg)
+                .frame(width: 2 * r, height: 2 * r)
+                .position(x: min(max(cx, left + r), left + width - r), y: (y + h / 2) * s)
+        }
+    }
+
+    private func scaleLabel(_ text: String, x: CGFloat, anchor: CGFloat, p: WhoopPalette, s: CGFloat) -> some View {
+        Text(text)
+            .font(whoopFont(5.8 * s, .semibold))
+            .monospacedDigit()
+            .foregroundStyle(p.fg2)
+            .opacity(0.8)
+            .fixedSize()
+            .whoopAt(x: x, baseline: 76 * s, anchor: anchor)
+    }
+
+    private var columns: some View {
+        let d = display
+        let p = WhoopPalette(tinted: tinted, stale: d.isStale, preview: accentPreview)
+        let rc = p.metric(.recovery(d.band), accent: true)
+        let sc = p.metric(.strain, accent: true)
+        let band: (WhoopBand) -> Color = { b in p.metric(.recovery(b), accent: true) }
+        let recSegs = [Segment(id: 0, from: 0, to: 0.33, color: band(.red)),
+                       Segment(id: 1, from: 0.33, to: 0.66, color: band(.yellow)),
+                       Segment(id: 2, from: 0.66, to: 1, color: band(.green))]
+        let strainSegs = [Segment(id: 0, from: 0, to: 10.0 / 21, color: sc),
+                          Segment(id: 1, from: 10.0 / 21, to: 14.0 / 21, color: sc),
+                          Segment(id: 2, from: 14.0 / 21, to: 18.0 / 21, color: sc),
+                          Segment(id: 3, from: 18.0 / 21, to: 1, color: sc)]
+        let recPending = d.recoveryPending || d.recovery == nil
+        let header = tinted || d.isStale
+        let x0: CGFloat = 92
+        return WhoopCanvas(w: 170, h: 78, stretchX: true) { s, sx in
+            Rectangle()
+                .fill(p.fg)
+                .opacity(0.22)
+                .frame(width: 0.7 * s, height: 70 * s)
+                .offset(x: 85 * sx, y: 4 * s)
+
+            // Recovery column
+            Text("RECOVERY")
+                .font(whoopFont(7.4 * s))
+                .tracking(0.35 * s)
+                .foregroundStyle(header ? p.fg2 : rc)
+                .lineLimit(1)
+                .fixedSize()
+                .whoopAt(x: 0, baseline: 10 * s)
+            if recPending {
+                WhoopDots(cx: 10 * sx, cy: 33 * s, r: 2.3 * s, gap: 6.6 * s, color: p.fg)
+                Text(d.recoveryNote)
+                    .font(whoopFont(8.3 * s, .semibold))
+                    .foregroundStyle(p.fg2)
+                    .lineLimit(1)
+                    .fixedSize()
+                    .whoopAt(x: 0, baseline: 50 * s)
+                gauge([Segment(id: 0, from: 0, to: 1, color: p.fg2)], frac: nil, x0: 0, x1: 78, p: p, s: s, sx: sx)
+            } else {
+                (Text("\(d.recovery ?? 0)").font(whoopFont(25 * s)).foregroundStyle(d.isStale ? p.fg : rc)
+                 + Text("%").font(whoopFont(13 * s)).foregroundStyle(d.isStale ? p.fg2 : rc))
+                    .monospacedDigit()
+                    .lineLimit(1)
+                    .fixedSize()
+                    .widgetAccentable(p.accents)
+                    .whoopAt(x: 0, baseline: 38 * s)
+                Text("HRV \(d.hrv.map(String.init) ?? "--") · RHR \(d.rhr.map(String.init) ?? "--")")
+                    .font(whoopFont(8 * s, .semibold))
+                    .monospacedDigit()
+                    .foregroundStyle(p.fg2)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+                    .frame(width: 80 * sx, alignment: .leading)
+                    .whoopAt(x: 0, baseline: 50 * s)
+                gauge(recSegs, frac: Double(d.recovery ?? 0) / 100, x0: 0, x1: 78, p: p, s: s, sx: sx)
+            }
+            scaleLabel("0", x: 0, anchor: 0, p: p, s: s)
+            scaleLabel("100", x: 78 * sx, anchor: 1, p: p, s: s)
+
+            // Strain column
+            Text("STRAIN")
+                .font(whoopFont(7.4 * s))
+                .tracking(0.35 * s)
+                .foregroundStyle(header ? p.fg2 : p.metric(.strain))
+                .lineLimit(1)
+                .fixedSize()
+                .whoopAt(x: x0 * sx, baseline: 10 * s)
+            Text(d.isStale ? (d.ageLabel.map { "\($0) ago" } ?? "No data")
+                           : (d.kcal.map { "\($0.formatted(.number)) cal" } ?? ""))
+                .font(whoopFont(7.4 * s, .semibold))
+                .monospacedDigit()
+                .foregroundStyle(p.fg2)
+                .lineLimit(1)
+                .fixedSize()
+                .whoopAt(x: 170 * sx, baseline: 10 * s, anchor: 1)
+            Text(d.strainKnown ? String(format: "%.1f", d.strain) : "--")
+                .font(whoopFont(25 * s))
+                .monospacedDigit()
+                .foregroundStyle(p.fg)
+                .lineLimit(1)
+                .fixedSize()
+                .whoopAt(x: x0 * sx, baseline: 38 * s)
+            Text(d.strainKnown ? WhoopDisplay.zone(d.strain) : (d.noData ? "No data yet" : "No data"))
+                .font(whoopFont(8 * s))
+                .foregroundStyle(header || !d.strainKnown ? p.fg2 : p.metric(.strain))
+                .lineLimit(1)
+                .fixedSize()
+                .whoopAt(x: x0 * sx, baseline: 50 * s)
+            gauge(strainSegs, frac: d.strainKnown ? d.strain / 21 : nil, x0: x0, x1: 170, p: p, s: s, sx: sx)
+            scaleLabel("0", x: x0 * sx, anchor: 0, p: p, s: s)
+            ForEach([10, 14, 18], id: \.self) { z in
+                scaleLabel("\(z)", x: (x0 + CGFloat(z) / 21 * (170 - x0)) * sx, anchor: 0.5, p: p, s: s)
+            }
+        }
+    }
+}
+
 // MARK: - Widget plumbing
 // Everything above is plain SwiftUI so it can be rendered offscreen; the
 // WidgetKit timeline, entry views and widget declarations follow.
@@ -1327,7 +1620,7 @@ struct WhoopProvider: TimelineProvider {
 }
 
 private struct WhoopEntryView: View {
-    enum Design { case rings, triad, strainToday, weekTrends, threeRingsDetail }
+    enum Design { case rings, triad, strainToday, weekTrends, threeRingsDetail, twinRings, splitGauges }
 
     @Environment(\.widgetRenderingMode) private var renderingMode
     let entry: WhoopEntry
@@ -1342,6 +1635,8 @@ private struct WhoopEntryView: View {
             case .strainToday: WhoopStrainTodayView(display: entry.display, tinted: tinted)
             case .weekTrends: WhoopWeekTrendsView(display: entry.display, tinted: tinted)
             case .threeRingsDetail: WhoopThreeRingsView(display: entry.display, tinted: tinted, detail: true)
+            case .twinRings: WhoopTwinRingsView(display: entry.display, tinted: tinted)
+            case .splitGauges: WhoopSplitGaugesView(display: entry.display, tinted: tinted)
             }
         }
         .containerBackground(for: .widget) { Color.clear }
@@ -1403,6 +1698,28 @@ struct WhoopThreeRingsDetailWidget: Widget {
     }
 }
 
+struct WhoopTwinRingsWidget: Widget {
+    var body: some WidgetConfiguration {
+        StaticConfiguration(kind: WhoopWidgetKinds.twinRings, provider: WhoopProvider()) { entry in
+            WhoopEntryView(entry: entry, design: .twinRings)
+        }
+        .configurationDisplayName("Recovery + Strain Rings")
+        .description("Recovery and strain rings with HRV, RHR, zone and calories.")
+        .supportedFamilies([.accessoryRectangular])
+    }
+}
+
+struct WhoopSplitGaugesWidget: Widget {
+    var body: some WidgetConfiguration {
+        StaticConfiguration(kind: WhoopWidgetKinds.splitGauges, provider: WhoopProvider()) { entry in
+            WhoopEntryView(entry: entry, design: .splitGauges)
+        }
+        .configurationDisplayName("Recovery + Strain Gauges")
+        .description("Recovery and strain side by side on band and zone gauges.")
+        .supportedFamilies([.accessoryRectangular])
+    }
+}
+
 // MARK: - Previews
 
 private let previewNow = Date()
@@ -1449,6 +1766,26 @@ private let previewNow = Date()
 
 #Preview("Rings + Detail", as: .accessoryRectangular) {
     WhoopThreeRingsDetailWidget()
+} timeline: {
+    WhoopEntry(date: previewNow, summary: .sampleGreen(fetchedAt: previewNow))
+    WhoopEntry(date: previewNow, summary: .sampleRed(fetchedAt: previewNow))
+    WhoopEntry(date: previewNow, summary: .samplePending(fetchedAt: previewNow))
+    WhoopEntry(date: previewNow, summary: .sampleGreen(fetchedAt: previewNow.addingTimeInterval(-2 * 3600)))
+    WhoopEntry(date: previewNow, summary: .sampleNotConfigured())
+}
+
+#Preview("Twin Rings", as: .accessoryRectangular) {
+    WhoopTwinRingsWidget()
+} timeline: {
+    WhoopEntry(date: previewNow, summary: .sampleGreen(fetchedAt: previewNow))
+    WhoopEntry(date: previewNow, summary: .sampleRed(fetchedAt: previewNow))
+    WhoopEntry(date: previewNow, summary: .samplePending(fetchedAt: previewNow))
+    WhoopEntry(date: previewNow, summary: .sampleGreen(fetchedAt: previewNow.addingTimeInterval(-2 * 3600)))
+    WhoopEntry(date: previewNow, summary: .sampleNotConfigured())
+}
+
+#Preview("Split Gauges", as: .accessoryRectangular) {
+    WhoopSplitGaugesWidget()
 } timeline: {
     WhoopEntry(date: previewNow, summary: .sampleGreen(fetchedAt: previewNow))
     WhoopEntry(date: previewNow, summary: .sampleRed(fetchedAt: previewNow))

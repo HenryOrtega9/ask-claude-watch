@@ -464,5 +464,7 @@ enum WhoopWidgetKinds {
     static let strainToday = "WhoopStrainToday"
     static let weekTrends = "WhoopWeekTrends"
     static let threeRingsDetail = "WhoopThreeRingsDetail"
-    static let all = [recoveryStrainRings, triad, strainToday, weekTrends, threeRingsDetail]
+    static let twinRings = "WhoopTwinRings"
+    static let splitGauges = "WhoopSplitGauges"
+    static let all = [recoveryStrainRings, triad, strainToday, weekTrends, threeRingsDetail, twinRings, splitGauges]
 }

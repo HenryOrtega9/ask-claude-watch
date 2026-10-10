@@ -15,6 +15,8 @@ struct AskClaudeWidgets: WidgetBundle {
         WhoopStrainTodayWidget()
         WhoopWeekTrendsWidget()
         WhoopThreeRingsDetailWidget()
+        WhoopTwinRingsWidget()
+        WhoopSplitGaugesWidget()
     }
 }
 

@@ -59,6 +59,25 @@ struct VaultNote: Codable, Identifiable, Hashable {
     }
 }
 
+/// One subfolder row of the gateway's GET /folder listing. `notes` counts
+/// the readable notes beneath it at any depth.
+struct VaultFolder: Codable, Identifiable, Hashable {
+    let path: String
+    let name: String
+    let notes: Int?
+    let mtime: Double?
+
+    var id: String { path }
+}
+
+/// GET /folder: one vault folder's direct subfolders and files, each
+/// sorted by name. `path` is "" for the vault root.
+struct FolderListing: Codable, Hashable {
+    let path: String
+    let folders: [VaultFolder]
+    let files: [VaultNote]
+}
+
 private struct FilesResponse: Decodable {
     let files: [VaultNote]
 }
@@ -102,6 +121,15 @@ struct NotesClient {
         let data = try await get("/file", ["path": path, "maxChars": String(MarkdownBlocks.characterCap + 1)])
         let file = try JSONDecoder().decode(FileResponse.self, from: data)
         return (file.text, file.truncated ?? false)
+    }
+
+    /// GET /folder: one folder's subfolders and readable files. `text=1`
+    /// leaves attachments out of `files` and the counts; rows /file cannot
+    /// serve are dropped here as well.
+    func folder(_ path: String) async throws -> FolderListing {
+        let data = try await get("/folder", ["path": path, "text": "1"])
+        let listing = try JSONDecoder().decode(FolderListing.self, from: data)
+        return FolderListing(path: listing.path, folders: listing.folders, files: listing.files.filter(\.isReadable))
     }
 
     /// GET /note/resolve: a wikilink target to a vault path, resolved by

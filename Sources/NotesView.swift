@@ -2,7 +2,8 @@ import SwiftUI
 
 /// Read-only browser for the Obsidian vault, served by the vault gateway's
 /// note routes under the notes read token. Pinned notes first, then the
-/// most recently modified; the search field takes dictation or Scribble.
+/// most recently modified, then a way into the folder tree; the search
+/// field takes dictation or Scribble.
 struct NotesView: View {
     @Environment(\.scenePhase) private var scenePhase
     @StateObject private var store = NotesStore()
@@ -63,6 +64,15 @@ struct NotesView: View {
                 } footer: {
                     if let cachedAt = store.recentCachedAt {
                         OfflineLabel(prefix: store.recentStaleReason, cachedAt: cachedAt)
+                    }
+                }
+                // One row into the folder tree keeps this page short.
+                Section("Browse") {
+                    NavigationLink {
+                        FolderView(store: store, path: "")
+                    } label: {
+                        Label("All folders", systemImage: "folder.fill")
+                            .font(.footnote)
                     }
                 }
             }

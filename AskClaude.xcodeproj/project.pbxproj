@@ -30,6 +30,11 @@
 		AB03000000000000000000D1 /* WhoopModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB03000000000000000000A1 /* WhoopModels.swift */; };
 		AB03000000000000000000D2 /* WhoopClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB03000000000000000000A2 /* WhoopClient.swift */; };
 		AB03000000000000000000D3 /* WhoopWidgets.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB03000000000000000000A3 /* WhoopWidgets.swift */; };
+		AB04000000000000000000B1 /* MarkdownBlocks.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB04000000000000000000A1 /* MarkdownBlocks.swift */; };
+		AB04000000000000000000B2 /* NoteReaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB04000000000000000000A2 /* NoteReaderView.swift */; };
+		AB04000000000000000000B3 /* NotesClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB04000000000000000000A3 /* NotesClient.swift */; };
+		AB04000000000000000000B4 /* NotesStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB04000000000000000000A4 /* NotesStore.swift */; };
+		AB04000000000000000000B5 /* NotesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB04000000000000000000A5 /* NotesView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -53,6 +58,11 @@
 		AB03000000000000000000A1 /* WhoopModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WhoopModels.swift; sourceTree = "<group>"; };
 		AB03000000000000000000A2 /* WhoopClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WhoopClient.swift; sourceTree = "<group>"; };
 		AB03000000000000000000A3 /* WhoopWidgets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WhoopWidgets.swift; sourceTree = "<group>"; };
+		AB04000000000000000000A1 /* MarkdownBlocks.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownBlocks.swift; sourceTree = "<group>"; };
+		AB04000000000000000000A2 /* NoteReaderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoteReaderView.swift; sourceTree = "<group>"; };
+		AB04000000000000000000A3 /* NotesClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotesClient.swift; sourceTree = "<group>"; };
+		AB04000000000000000000A4 /* NotesStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotesStore.swift; sourceTree = "<group>"; };
+		AB04000000000000000000A5 /* NotesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotesView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -74,6 +84,11 @@
 				4DAF51C307E924D6819F3E44 /* UsageView.swift */,
 				AB03000000000000000000A2 /* WhoopClient.swift */,
 				AB03000000000000000000A1 /* WhoopModels.swift */,
+				AB04000000000000000000A1 /* MarkdownBlocks.swift */,
+				AB04000000000000000000A2 /* NoteReaderView.swift */,
+				AB04000000000000000000A3 /* NotesClient.swift */,
+				AB04000000000000000000A4 /* NotesStore.swift */,
+				AB04000000000000000000A5 /* NotesView.swift */,
 			);
 			path = Sources;
 			sourceTree = "<group>";
@@ -242,6 +257,11 @@
 				3C9E40B2F6D813C5709E2D33 /* UsageView.swift in Sources */,
 				AB03000000000000000000B1 /* WhoopModels.swift in Sources */,
 				AB03000000000000000000B2 /* WhoopClient.swift in Sources */,
+				AB04000000000000000000B1 /* MarkdownBlocks.swift in Sources */,
+				AB04000000000000000000B2 /* NoteReaderView.swift in Sources */,
+				AB04000000000000000000B3 /* NotesClient.swift in Sources */,
+				AB04000000000000000000B4 /* NotesStore.swift in Sources */,
+				AB04000000000000000000B5 /* NotesView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

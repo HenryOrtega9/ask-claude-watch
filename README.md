@@ -9,7 +9,8 @@ exposes it over a bearer-authed HTTP API across a Tailscale tailnet.
 Features: dictated or typed chat with full conversation context, a model and
 effort picker (driven by `/model` and `/effort` slash commands typed into the
 session), a Sessions tab that can view and message any live Claude session on
-the Mac, plan-limit usage gauges, Activity-style dual-ring watch-face
+the Mac, plan-limit usage gauges, a read-only Notes page for the Obsidian vault
+(served by the vault gateway), Activity-style dual-ring watch-face
 complications, and background done-notifications when a turn finishes after
 the wrist drops.
 
@@ -24,6 +25,8 @@ the wrist drops.
        static let bridgeToken = "<token>"
        // Read-only WHOOP token from ~/.config/vault-gateway/whoop-read-token
        static let whoopToken = "<whoop-read-token>"
+       // Read-only notes token from ~/.config/vault-gateway/notes-read-token
+       static let notesToken = "<notes-read-token>"
    }
    ```
 

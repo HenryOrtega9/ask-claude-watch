@@ -13,6 +13,9 @@ enum BridgeConfig {
     /// bridge, on its own port, and takes its own read-only token.
     static let defaultGatewayPort = 8788
     static let defaultWhoopToken = Secrets.whoopToken
+    /// The read-only Notes page uses the same gateway with a third token
+    /// that only opens /files, /file and /note/resolve.
+    static let defaultNotesToken = Secrets.notesToken
 
     static let appGroup = "group.dev.henryortega.askclaude"
     static let suite = UserDefaults(suiteName: BridgeConfig.appGroup) ?? .standard
@@ -22,6 +25,7 @@ enum BridgeConfig {
     @AppStorage("bridgeToken", store: BridgeConfig.suite) static var token: String = BridgeConfig.defaultToken
     @AppStorage("gatewayPort", store: BridgeConfig.suite) static var gatewayPort: Int = BridgeConfig.defaultGatewayPort
     @AppStorage("whoopToken", store: BridgeConfig.suite) static var whoopToken: String = BridgeConfig.defaultWhoopToken
+    @AppStorage("notesToken", store: BridgeConfig.suite) static var notesToken: String = BridgeConfig.defaultNotesToken
 
     /// The bridge moved from the MacBook Pro to the Mac mini on 2026-09-22.
     /// Rewrites a stored host that still names the MacBook so existing

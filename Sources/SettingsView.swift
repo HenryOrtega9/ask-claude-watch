@@ -7,6 +7,7 @@ struct SettingsView: View {
     @AppStorage("bridgeToken", store: BridgeConfig.suite) private var token = BridgeConfig.defaultToken
     @AppStorage("gatewayPort", store: BridgeConfig.suite) private var gatewayPort = BridgeConfig.defaultGatewayPort
     @AppStorage("whoopToken", store: BridgeConfig.suite) private var whoopToken = BridgeConfig.defaultWhoopToken
+    @AppStorage("notesToken", store: BridgeConfig.suite) private var notesToken = BridgeConfig.defaultNotesToken
     @AppStorage("modelAlias") private var modelAlias = ClaudeModel.fable.rawValue
     @AppStorage("model1M") private var oneMillion = false
     @AppStorage("effortLevel") private var effortLevel = EffortLevel.auto.rawValue
@@ -64,6 +65,11 @@ struct SettingsView: View {
             Section("WHOOP") {
                 TextField("Gateway port", value: $gatewayPort, format: .number.grouping(.never))
                 TextField("WHOOP token", text: $whoopToken)
+                    .textContentType(.password)
+            }
+            Section("Notes") {
+                // Shares the gateway port above; only the token differs.
+                TextField("Notes token", text: $notesToken)
                     .textContentType(.password)
             }
             Section {
